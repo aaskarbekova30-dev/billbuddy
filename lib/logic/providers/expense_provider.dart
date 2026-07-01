@@ -94,11 +94,22 @@ class ExpenseProvider with ChangeNotifier {
 
     _subscriptions.insert(0, newSub);
 
+    var box = Hive.box(_boxName);
+    String currentLang = box.get('current_language', defaultValue: 'ky');
+    
+    String subLabel = 'АБОНЕМЕНТ';
+    if (currentLang == 'en') {
+      subLabel = 'PASS';
+    } else if (currentLang == 'ru') {
+      subLabel = 'АБОНЕМЕНТ';
+    }
+
     final autoExpense = ExpenseModel(
-      title: '$name (Айлык жазылуу 🗓️)',
+      title: '$name ($subLabel)',
       amount: price,
       date: DateTime.now(),
     );
+    
     _expenses.insert(0, autoExpense);
     _totalBalance += price; 
 
