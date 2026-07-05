@@ -9,7 +9,8 @@ import 'package:billbuddy/logic/providers/language_provider.dart';
 // Билдирүү тутумунун импорту
 import 'package:billbuddy/services/notification_service.dart';
 
-import 'screens/dashboard_screen.dart';
+// 🌟 ЖАҢЫ КОШУЛДУ: Жаңы навигация экранын бул жерге импорттодук
+import 'main_navigation_screen.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,10 @@ void main() async {
 
   // Тиркеме күйгөндө билдирүү тутумун активдештирүү
   await NotificationService().initNotification();
+
+    // Топторду сактоо үчүн Hive кутучасын ачабыз
+  await Hive.openBox('groups_box');
+
 
   runApp(
     // 💡 ОҢДОЛГОН: Бир нече провайдерди чогуу каттоо үчүн MultiProvider колдонулду
@@ -48,7 +53,8 @@ class BillBuddyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: const DashboardScreen(), 
+      // 🌟 ОҢДОЛДУ: Эми тиркеме түз эле навигация менюсу бар баракты ачат
+      home: const MainNavigationScreen(), 
     );
   }
 }

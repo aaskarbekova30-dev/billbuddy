@@ -26,6 +26,13 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	
+	<!-- 🌟 ОҢДОЛДУ: Коопсуздук уруксаттары туура жана таза жайгаштырылды -->
+	<key>NSCameraUsageDescription</key>
+	<string>Тиркемеге топтун аватарын сүрөткө тартып коюу үчүн камерага уруксат керек.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Тиркемеге галереядан даяр сүрөт тандап коюу үчүн уруксат керек.</string>
+
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

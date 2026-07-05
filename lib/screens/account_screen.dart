@@ -48,29 +48,44 @@ class _AccountScreenState extends State<AccountScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: AppColors.cardBg,
-          title: const Text('Атыңызды өзгөртүңүз', style: TextStyle(color: AppColors.textWhite)),
+          title: const Text(
+            'Атыңызды өзгөртүңүз',
+            style: TextStyle(color: AppColors.textWhite),
+          ),
           content: TextField(
             controller: nameController,
             style: const TextStyle(color: AppColors.textWhite),
             decoration: const InputDecoration(
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textGray)),
-              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.textGray),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primary),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Жок', style: TextStyle(color: AppColors.textGray)),
+              child: const Text(
+                'Жок',
+                style: TextStyle(color: AppColors.textGray),
+              ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
               onPressed: () {
                 if (nameController.text.trim().isNotEmpty) {
                   _saveUserName(nameController.text.trim());
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Ырастоо', style: TextStyle(color: AppColors.background)),
+              child: const Text(
+                'Ырастоо',
+                style: TextStyle(color: AppColors.background),
+              ),
             ),
           ],
         );
@@ -90,7 +105,10 @@ class _AccountScreenState extends State<AccountScreen> {
         iconTheme: const IconThemeData(color: AppColors.textWhite),
         title: Text(
           langProvider.translate('account_title'),
-          style: const TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -100,7 +118,7 @@ class _AccountScreenState extends State<AccountScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            
+
             // --- КОЛДОНУУЧУНУН АВАТАРЫ ЖАНА АТЫ ---
             const CircleAvatar(
               radius: 45,
@@ -108,19 +126,26 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Icon(Icons.person, size: 50, color: AppColors.background),
             ),
             const SizedBox(height: 15),
-            
+
             // 🔥 ТҮЗӨТҮЛДҮ: Атты басканда аны өзгөртүүчү терезе ачылат жана жанында карандаш иконкасы турат
             InkWell(
               onTap: () => _showEditNameDialog(context, _currentUserName),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 6.0,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       _currentUserName,
-                      style: const TextStyle(color: AppColors.textWhite, fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: AppColors.textWhite,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.edit, color: AppColors.primary, size: 18),
@@ -148,12 +173,16 @@ class _AccountScreenState extends State<AccountScreen> {
               textColor: AppColors.alert,
               onTap: () {},
             ),
-            
+
             const Spacer(),
 
             Text(
               '${langProvider.translate('app_version')}: 1.0.0',
-              style: const TextStyle(color: AppColors.textGray, fontSize: 12, letterSpacing: 0.8),
+              style: const TextStyle(
+                color: AppColors.textGray,
+                fontSize: 12,
+                letterSpacing: 0.8,
+              ),
             ),
             const SizedBox(height: 20),
           ],
@@ -186,10 +215,18 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(width: 16),
               Text(
                 title,
-                style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const Spacer(),
-              Icon(Icons.arrow_forward_ios_rounded, color: iconColor.withValues(alpha: 0.5), size: 14),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: iconColor.withValues(alpha: 0.5),
+                size: 14,
+              ),
             ],
           ),
         ),

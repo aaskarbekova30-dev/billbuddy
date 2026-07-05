@@ -1,13 +1,13 @@
+import 'dart:io';
+import 'package:billbuddy/groups_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // 🔥 Hive кошулду
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart'; 
-import 'add_expense_screen.dart';
+import '../constants/app_colors.dart';
 import '../logic/providers/expense_provider.dart';
-import '../logic/providers/language_provider.dart'; 
-import 'add_subscription_screen.dart';
-import 'calendar_screen.dart'; 
-import 'account_screen.dart'; // Профиль экранынын импорту
+import '../logic/providers/language_provider.dart';
+import 'calendar_screen.dart';
+import 'account_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,7 +19,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final String _boxName = 'billbuddy_box';
   final String _userNameKey = 'user_name_key';
-  String _userName = 'Асан';
+  String _userName = 'Диана';
 
   @override
   void initState() {
@@ -27,11 +27,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadUserName();
   }
 
-  // Башкы бет ачылганда телефондун эс тутумунан колдонуучунун атын окуу
   void _loadUserName() async {
     var box = await Hive.openBox(_boxName);
     setState(() {
-      _userName = box.get(_userNameKey, defaultValue: 'Асан');
+      _userName = box.get(_userNameKey, defaultValue: 'Диана');
     });
   }
 
@@ -39,6 +38,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
+
+    String helloText = langProvider.translate('hello');
+    if (helloText.contains(',')) {
+      helloText = helloText.split(',')[0];
+    }
+    helloText = helloText.replaceAll('[', '').replaceAll(']', '').trim();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -49,19 +54,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              
+
               // --- HEADER (Үстүнкү бөлүк) ---
               Row(
                 children: [
-                  // Аватар басылганда Профиль барагына өтөт
                   GestureDetector(
                     onTap: () async {
-                      // Профилден кайтып келгенде ат жаңыланганын текшерүү үчүн 'await' колдонобуз
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AccountScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const AccountScreen(),
+                        ),
                       );
-                      _loadUserName(); // Кайтып келгенде жаңы атты кайра окуп экранды жаңылайт
+                      _loadUserName();
                     },
                     child: const CircleAvatar(
                       radius: 20,
@@ -70,9 +75,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // 🔥 ТҮЗӨТҮЛДҮ: Эми бул жерде тандалган тилге жараша Салам/Привет/Hello деп чыгат жана артынан сакталган жаңы ат кошулат!
                   Text(
-                    '${langProvider.translate('hello').split(',')[0]}, $_userName!',
+                    '$helloText, $_userName!',
                     style: const TextStyle(
                       color: AppColors.textWhite,
                       fontSize: 16,
@@ -80,16 +84,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  
+
                   DropdownButton<String>(
                     value: langProvider.currentLang,
                     dropdownColor: AppColors.cardBg,
-                    icon: const Icon(Icons.language, color: AppColors.primary, size: 18),
-                    underline: const SizedBox(), 
-                    style: const TextStyle(color: AppColors.textWhite, fontSize: 14),
+                    icon: const Icon(
+                      Icons.language,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                    underline: const SizedBox(),
+                    style: const TextStyle(
+                      color: AppColors.textWhite,
+                      fontSize: 14,
+                    ),
                     onChanged: (String? newLang) {
                       if (newLang != null) {
-                        langProvider.changeLanguage(newLang); 
+                        langProvider.changeLanguage(newLang);
                       }
                     },
                     items: const [
@@ -98,20 +109,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       DropdownMenuItem(value: 'en', child: Text(' EN ')),
                     ],
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   IconButton(
-                    icon: const Icon(Icons.calendar_month, color: AppColors.textWhite),
+                    icon: const Icon(
+                      Icons.calendar_month,
+                      color: AppColors.textWhite,
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CalendarScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const CalendarScreen(),
+                        ),
                       );
                     },
                   ),
-                ], 
-              ), 
+                ],
+              ),
 
               const SizedBox(height: 30),
 
@@ -137,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '+\$${expenseProvider.totalBalance.toStringAsFixed(2)}', 
+                      '+\$${expenseProvider.totalBalance.toStringAsFixed(2)}',
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 32,
@@ -149,117 +165,220 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 30),
 
-              // --- АТ АЛЫШ ЖАНА ЖАЗЫЛУУ БАСКЫЧЫ ---
+              // --- АКТИВДҮҮ ТОПТОРДУН БАСКЫЧЫ ЖАНА ТЕКСТИ ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    langProvider.translate('my_expenses'),
-                    style: const TextStyle(
-                      color: AppColors.textWhite,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Чыгашалар',
+                        style: TextStyle(
+                          color: AppColors.textWhite,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
+
                   TextButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AddSubscriptionScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const GroupsScreen(),
+                        ),
                       );
                     },
-                    icon: const Icon(Icons.calendar_month, color: AppColors.primary, size: 16),
-                    label: Text(
-                      langProvider.translate('add_subscription'),
-                      style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w600),
+                    icon: const Icon(
+                      Icons.add_circle_outline_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      'Добавить группу',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-
-              // --- ЧЫГАШАЛАРДЫН ЖАНДУУ ТИЗМЕСИ ---
+              // --- ЧЫГАШАЛАРДЫН ЖАНДУУ ТИЗМЕСИ (HIVE БАЗАСЫ МЕНЕН) ---
               Expanded(
-                child: expenseProvider.expenses.isEmpty
-                    ? Center(
+                child: ValueListenableBuilder(
+                  valueListenable: Hive.box('groups_box').listenable(),
+                  builder: (context, Box box, _) {
+                    if (box.isEmpty) {
+                      return const Center(
                         child: Text(
-                          langProvider.translate('no_expenses'),
+                          'У вас пока нет созданных групп.\nНажмите на кнопку "Добавить группу" выше!',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.textGray, fontSize: 14),
+                          style: TextStyle(
+                            color: AppColors.textGray,
+                            fontSize: 14,
+                          ),
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: expenseProvider.expenses.length,
-                        itemBuilder: (context, index) {
-                          final expense = expenseProvider.expenses[index];
+                      );
+                    }
 
-                          return Dismissible(
-                            key: Key(expense.date.millisecondsSinceEpoch.toString()), 
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              margin: const EdgeInsets.only(bottom: 12.0),
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                    return ListView.builder(
+                      itemCount: box.length,
+                      itemBuilder: (context, index) {
+                        final actualIndex = box.length - 1 - index;
+                        final group = box.getAt(actualIndex) as Map;
+                        final imagePath = group['imagePath'] as String;
+                        final groupName = group['name'] as String;
+
+                        IconData groupIcon = Icons.more_horiz_rounded;
+                        if (group['type'] == 'Жильё') {
+                          groupIcon = Icons.home_work_rounded;
+                        }
+                        if (group['type'] == 'Кафе/Праздник') {
+                          groupIcon = Icons.local_pizza_rounded;
+                        }
+                        if (group['type'] == 'Поездки') {
+                          groupIcon = Icons.directions_car_rounded;
+                        }
+
+                        double groupTotalAmount = 0.0;
+                        try {
+                          final mainBox = Hive.box('billbuddy_box');
+                          final List<dynamic>? savedRaw = mainBox.get(
+                            'expenses_list_raw',
+                          );
+                          if (savedRaw != null) {
+                            for (var item in savedRaw) {
+                              final expense = item as Map;
+                              final title = (expense['title'] ?? '') as String;
+                              final amount =
+                                  (expense['amount'] ?? 0.0) as double;
+
+                              if (title.contains(groupName)) {
+                                groupTotalAmount += amount;
+                              }
+                            }
+                          }
+                        } catch (e) {
+                          groupTotalAmount = 0.0;
+                        }
+
+                        return Dismissible(
+                          key: Key(
+                            group['createdAt'] ?? actualIndex.toString(),
+                          ),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            margin: const EdgeInsets.only(bottom: 12.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: BoxDecoration(
+                              color: AppColors.alert,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.centerRight,
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onDismissed: (direction) {
+                            box.deleteAt(actualIndex);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Группа "$groupName" удалена'),
+                                backgroundColor: AppColors.alert,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: AppColors.alert,
+                                color: AppColors.cardBg,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              alignment: Alignment.centerRight,
-                              child: const Icon(Icons.delete, color: Colors.white),
-                            ),
-                            onDismissed: (direction) {
-                              expenseProvider.deleteExpense(index);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('"${expense.title}" ${langProvider.translate('deleted')}'),
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cardBg,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          expense.title,
-                                          style: const TextStyle(color: AppColors.textWhite,
-                                          fontSize: 16,fontWeight: FontWeight.w500,),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 45,
+                                    height: 45,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.background,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: imagePath.isNotEmpty
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Image.file(
+                                              File(imagePath),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Icon(
+                                            groupIcon,
+                                            color: AppColors.primary,
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text('${expense.date.day}.${expense.date.month}.${expense.date.year}',
-                                          style: const TextStyle(
-                                            color: AppColors.textGray,
-                                            fontSize: 12,),),],),
-                                            const Spacer(),Text('+\$${expense.amount.toStringAsFixed(2)}',
-                                            style: const TextStyle(color: AppColors.primary,
-                                            fontSize: 16,fontWeight: FontWeight.bold,),
-                                            ),
-                                            ],
-                                            ),
-                                            ),
-                                            ),
-                                            );
-                                            },
-                                            ),
-                                            ),
-                                            ],
-                                            ),
-                                            ),
-                                            ),floatingActionButton: 
-                                            FloatingActionButton(onPressed: () async { //Чыгаша кошуп келгенден кийин да башкы бетти жаңылоо коопсуздугу үчүн 
-                                            await Navigator.push(context,MaterialPageRoute(
-                                              builder: (context) => const AddExpenseScreen()),
-                                              );_loadUserName();},backgroundColor: AppColors.primary,
-                                              shape: const CircleBorder(),child: 
-                                              const Icon(Icons.add,color: AppColors.background,size: 30,),
-                                              ),floatingActionButtonLocation: 
-                                              FloatingActionButtonLocation.centerFloat,);}}
+                                  ),
+                                  const SizedBox(width: 15),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        groupName,
+                                        style: const TextStyle(
+                                          color: AppColors.textWhite,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Тип: ${group['type']}',
+                                        style: const TextStyle(
+                                          color: AppColors.textGray,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '\$${groupTotalAmount.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: AppColors.textWhite,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

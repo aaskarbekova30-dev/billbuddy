@@ -1,8 +1,8 @@
 class SubscriptionModel {
-  final String id;          // Ар бир жазылуу үчүн уникалдуу ID
-  final String name;        // Тиркеменин аты (мис: Netflix, Spotify)
-  final double price;       // Айына канча төлөнөт (мис: 9.99)
-  final int paymentDay;     // Айдын кайсы күнү акча кармалат (мис: 15-чи күнү)
+  final String id; // Ар бир жазылуу үчүн уникалдуу ID
+  final String name; // Тиркеменин аты (мис: Netflix, Spotify)
+  final double price; // Айына канча төлөнөт (мис: 9.99)
+  final int paymentDay; // Айдын кайсы күнү акча кармалат (мис: 15-чи күнү)
 
   SubscriptionModel({
     required this.id,
@@ -13,12 +13,7 @@ class SubscriptionModel {
 
   // Телефондун файлына сактоо үчүн картага (текстке) айландыруу
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'price': price,
-      'paymentDay': paymentDay,
-    };
+    return {'id': id, 'name': name, 'price': price, 'paymentDay': paymentDay};
   }
 
   // Файлдан кайра окуп алуу

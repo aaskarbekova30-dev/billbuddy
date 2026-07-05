@@ -5,7 +5,7 @@ import '../../constants/app_strings.dart';
 class LanguageProvider with ChangeNotifier {
   final String _boxName = 'billbuddy_box';
   final String _langKey = 'current_language';
-  
+
   // Баштапкы тил - кыргыз тили ('ky')
   String _currentLang = 'ky';
 
@@ -26,7 +26,7 @@ class LanguageProvider with ChangeNotifier {
   void changeLanguage(String langCode) async {
     _currentLang = langCode;
     notifyListeners(); // Экрандагы тилдерди дароо жаңылайт
-    
+
     var box = Hive.box(_boxName);
     await box.put(_langKey, langCode);
   }

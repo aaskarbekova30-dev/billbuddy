@@ -26,8 +26,13 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
-    final langProvider = Provider.of<LanguageProvider>(context); // 🔥 Тилди угуу
+    final expenseProvider = Provider.of<ExpenseProvider>(
+      context,
+      listen: false,
+    );
+    final langProvider = Provider.of<LanguageProvider>(
+      context,
+    ); // 🔥 Тилди угуу
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,7 +43,10 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
         // 🔥 ОҢДОЛГОН: "Жазылууну көзөмөлдөө" тексти тилге байланды
         title: Text(
           langProvider.translate('sub_title'),
-          style: const TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -50,7 +58,11 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             // 🔥 ОҢДОЛГОН: "Тиркемени тандоо" тексти тилге байланды
             Text(
               langProvider.translate('select_app'),
-              style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -58,9 +70,16 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               style: const TextStyle(color: AppColors.textWhite),
               decoration: InputDecoration(
                 hintText: langProvider.translate('app_name_hint'),
-                hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textGray)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                hintStyle: const TextStyle(
+                  color: AppColors.textGray,
+                  fontSize: 14,
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.textGray),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primary),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -68,7 +87,11 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             // 🔥 ОҢДОЛГОН: "Айлык акысы" тексти тилге байланды
             Text(
               langProvider.translate('monthly_price'),
-              style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -76,10 +99,18 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(color: AppColors.textWhite),
               decoration: InputDecoration(
-                hintText: '${langProvider.translate('example')} 9.99', // 🔥 "мисалы: 9.99"
-                hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textGray)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                hintText:
+                    '${langProvider.translate('example')} 9.99', // 🔥 "мисалы: 9.99"
+                hintStyle: const TextStyle(
+                  color: AppColors.textGray,
+                  fontSize: 14,
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.textGray),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primary),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -87,7 +118,11 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             // 🔥 ОҢДОЛГОН: "Айдын кайсы күнү төлөнөт?" тексти тилге байланды
             Text(
               langProvider.translate('payment_day'),
-              style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -95,13 +130,21 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(color: AppColors.textWhite),
               decoration: InputDecoration(
-                hintText: '${langProvider.translate('example')} 25', // 🔥 "мисалы: 25"
-                hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textGray)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                hintText:
+                    '${langProvider.translate('example')} 25', // 🔥 "мисалы: 25"
+                hintStyle: const TextStyle(
+                  color: AppColors.textGray,
+                  fontSize: 14,
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.textGray),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primary),
+                ),
               ),
             ),
-            
+
             const Spacer(),
 
             // АБОНЕМЕНТТИ КОШУУ БАСКЫЧЫ
@@ -111,26 +154,41 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () {
                   final name = _nameController.text.trim();
                   final price = double.tryParse(_priceController.text.trim());
                   final day = int.tryParse(_dayController.text.trim());
 
-                  if (name.isNotEmpty && price != null && price > 0 && day != null && day >= 1 && day <= 31) {
+                  if (name.isNotEmpty &&
+                      price != null &&
+                      price > 0 &&
+                      day != null &&
+                      day >= 1 &&
+                      day <= 31) {
                     expenseProvider.addSubscription(name, price, day);
                     Navigator.pop(context);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(langProvider.translate('enter_all_fields'))),
+                      SnackBar(
+                        content: Text(
+                          langProvider.translate('enter_all_fields'),
+                        ),
+                      ),
                     );
                   }
                 },
                 // 🔥 ОҢДОЛГОН: Баскычтын тексти да тилге байланды
                 child: Text(
                   langProvider.translate('add_button'),
-                  style: const TextStyle(color: AppColors.background, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: AppColors.background,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
