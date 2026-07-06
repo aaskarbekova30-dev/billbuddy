@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'groups_screen.dart';
-import 'analytics_screen.dart';
 import 'package:billbuddy/screens/dashboard_screen.dart';
-// 🌟 ОҢДОЛДУ: Эми файл өз дарегинен катасыз, таза окулат
+import 'package:flutter/material.dart';
+import 'groups_screen.dart';   
+import 'analytics_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -14,10 +13,10 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  // Менюдагы барактардын тизмеси
+  // 🌟 ОҢДОЛДУ: Бардык барактардын эң акыркы жандуу версиялары ушул жерге байланды
   final List<Widget> _screens = [
     const DashboardScreen(), // 0 - Башкы бет
-    const GroupsScreen(), // 1 - Топтор
+    const GroupsScreen(),    // 1 - Топтордун башкы тизме барагы
     const AnalyticsScreen(), // 2 - Статистика
   ];
 
@@ -30,12 +29,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: const Color(0xFF182747),
-        selectedItemColor: const Color(0xFF00E676), // Жашыл түс
+        backgroundColor: const Color(0xFF182747), 
+        selectedItemColor: const Color(0xFF00E676), // Сиздин кооз жашыл түс
         unselectedItemColor: Colors.grey,
         showSelectedLabels: true,
         showUnselectedLabels: false,

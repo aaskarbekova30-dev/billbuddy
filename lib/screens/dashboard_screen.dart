@@ -1,5 +1,4 @@
-import 'dart:io';
-import 'package:billbuddy/groups_screen.dart';
+import 'package:billbuddy/screens/groups_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +7,8 @@ import '../logic/providers/expense_provider.dart';
 import '../logic/providers/language_provider.dart';
 import 'calendar_screen.dart';
 import 'account_screen.dart';
+import 'dart:io';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -193,7 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const GroupsScreen(),
+                          builder: (context) => const CreateGroupFormScreen(),
                         ),
                       );
                     },
