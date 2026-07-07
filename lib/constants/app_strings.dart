@@ -1,9 +1,9 @@
 class AppStrings {
   // 1. Кыргыз тили
   static const Map<String, String> ky = {
-    'hello': 'Салам, Асан!',
+    'hello': 'Салам',
     'total_balance': 'ЖАЛПЫ БАЛАНС',
-    'my_expenses': 'Чыгашалар 📝',
+    'my_expenses': 'Чыгашалар',
     'sub_label': 'АБОНЕМЕНТ',
     'add_subscription': '+ Абонемент',
     'no_expenses':
@@ -12,7 +12,6 @@ class AppStrings {
     'calendar_title': 'Чыгашалар календары',
     'no_expenses_day': 'Бул күнү чыгашалар катталган эмес 🌿',
     'select_language': 'Тилди тандоо',
-    // Жаңы кошулган саптар:
     'add_expense_title': 'Жаңы чыгаша кошуу',
     'expense_name': 'Чыгашанын аталышы',
     'amount': 'Суммасы (\$)',
@@ -24,13 +23,50 @@ class AppStrings {
     'feedback': 'Сунуштар',
     'logout': 'Чыгуу',
     'app_version': 'Тиркеменин версиясы',
+
+    // ТОПТОР БӨЛҮМҮНҮН КЫРГЫЗЧА СӨЗДӨРҮ
+    'my_groups_title': "Менин топторум",
+    'create_new_group': "Жаңы топ түзүү",
+    'active_groups_list': "Активдүү топтордун тизмеси",
+    'no_groups_yet': "Сизде азырынча түзүлгөн топтор жок",
+    'group_direction_label': "Категория",
+    'create_group_title': "Топ түзүү",
+    'hint_group_name': "Аталышы (батир, кечки тамак...)",
+    'hint_expense_amount': "Чыгаша суммасы (милдеттүү эмес)",
+    'group_direction_title': "Топтун багыты",
+    'btn_create_group': "Топту түзүү",
+    'type_housing': "Үй-жай",
+    'type_cafe': "Кафе/Майрам",
+    'type_travel': "Сапарлар",
+    'type_other': "Башкалар",
+    'alert_enter_group_name': "Сураныч, топтун аталышын киргизиңиз!",
+    'initial_expense_prefix': "Алгачкы чыгаша",
+    'group_created_success': "тобу ийгиликтүү түзүлдү!",
+    'error_title': "Ката",
+    'camera_not_available': "Камера жеткиликтүү эмес.",
+    'choose_group_avatar': "Топтун аватарын тандоо",
+    'take_photo': "Сүрөткө тартуу",
+    'choose_from_gallery': "Галереядан тандоо",
+
+    // СТАТИСТИКА БӨЛҮМҮНҮН КЫРГЫЗЧА СӨЗДӨРҮ
+    'analytics_title': 'Чыгашалардын статистикасы',
+    'analytics_empty_hint':
+        'Статистиканы көрүү үчүн топ түзүп, \nчыгашаларды кошуңуз',
+    'monthly_total_label': 'БИР АЙЛЫК ЖАЛПЫ ЧЫГАША',
+    'category_analytics_title': 'Категориялар боюнча аналитика',
+    'calendar_payments_title': 'Төлөмдөр календары',
+    'day_events_label': 'Күндүн окуялары',
+    'no_events_empty_hint':
+        'Бул күнү пландалган төлөмдөр же\nчыгашалар катталган эмес',
+    'monthly_sub_label': 'Айлык абонемент',
+    'expense_label': 'Чыгаша',
   };
 
   // 2. Орус тили
   static const Map<String, String> ru = {
-    'hello': 'Привет, Асан!',
+    'hello': 'Привет',
     'total_balance': 'ОБЩИЙ БАЛАНС',
-    'my_expenses': 'Расходы 📝',
+    'my_expenses': 'Расходы',
     'add_subscription': '+ Абонемент',
     'sub_label': 'АБОНЕМЕНТ',
     'no_expenses': 'Расходов пока нет.\nНажмите плюс, чтобы добавить!',
@@ -38,14 +74,13 @@ class AppStrings {
     'calendar_title': 'Календарь расходов',
     'no_expenses_day': 'В этот день расходов не было 🌿',
     'select_language': 'Выбор языка',
-    // Жаңы кошулган саптар:
     'add_expense_title': 'Добавить новый расход',
     'expense_name': 'Название расхода',
     'amount': 'Сумма (\$)',
     'split_with': 'Поделить с',
     'save': 'Сохранить',
     'enter_all_fields': 'Пожалуйста, заполните все поля',
-    'account_title': 'Аккаунт',
+    'account_title': 'Account',
     'preferences': 'Настройки',
     'feedback': 'Обратная связь',
     'logout': 'Выйти',
@@ -57,13 +92,49 @@ class AppStrings {
     'example': 'например:',
     'add_button': 'Добавить абонемент',
     'app_name_hint': 'Название (напр: Netflix)',
-  };
 
+    // ТОПТОР БӨЛҮМҮНҮН ОРУСЧА СӨЗДӨРҮ
+    'my_groups_title': "Мои группы",
+    'create_new_group': "Создать новую группу",
+    'active_groups_list': "Список активных групп",
+    'no_groups_yet': "У вас пока нет созданных групп",
+    'group_direction_label': "Категория",
+    'create_group_title': "Создать группу",
+    'hint_group_name': "Название (аппартаменты, ужин...)",
+    'hint_expense_amount': "Сумма расхода (необязательно)",
+    'group_direction_title': "Тип группы",
+    'btn_create_group': "Создать группу",
+    'type_housing': "Жильё",
+    'type_cafe': "Кафе/Праздник",
+    'type_travel': "Поездки",
+    'type_other': "Другое",
+    'alert_enter_group_name': "Пожалуйста, введите название группы!",
+    'initial_expense_prefix': "Начальный расход",
+    'group_created_success': "успешно создана!",
+    'error_title': "Ошибка",
+    'camera_not_available': "Камера недоступна.",
+    'choose_group_avatar': "Выбрать аватар группы",
+    'take_photo': "Сделать фото",
+    'choose_from_gallery': "Выбрать из галереи",
+
+    // СТАТИСТИКА БӨЛҮМҮНҮН ОРУСЧА СӨЗДӨРҮ
+    'analytics_title': 'Статистика расходов',
+    'analytics_empty_hint':
+        'Создайте группы и добавьте расходы,\nчтобы увидеть статистику',
+    'monthly_total_label': 'ОБЩИЕ РАСХОДЫ ЗА МЕСЯЦ',
+    'category_analytics_title': 'Аналитика по категориям',
+    'calendar_payments_title': 'Календарь платежей',
+    'day_events_label': 'События дня',
+    'no_events_empty_hint':
+        'В этот день нет запланированных\nплатежей или расходов',
+    'monthly_sub_label': 'Ежемесячный абонемент',
+    'expense_label': 'Расход',
+  };
   // 3. Англис тили
   static const Map<String, String> en = {
-    'hello': 'Hello, Asan!',
+    'hello': 'Hello',
     'total_balance': 'TOTAL BALANCE',
-    'my_expenses': 'My Expenses 📝',
+    'my_expenses': 'My Expenses',
     'add_subscription': '+ Pass',
     'sub_label': 'PASS',
     'no_expenses': 'No expenses yet.\nTap plus to add one!',
@@ -71,7 +142,6 @@ class AppStrings {
     'calendar_title': 'Expense Calendar',
     'no_expenses_day': 'No expenses on this day 🌿',
     'select_language': 'Select Language',
-    // Жаңы кошулган саптар:
     'add_expense_title': 'Add New Expense',
     'expense_name': 'Expense Name',
     'amount': 'Amount (\$)',
@@ -90,5 +160,41 @@ class AppStrings {
     'example': 'example:',
     'add_button': 'Add Pass',
     'app_name_hint': 'App name (e.g. Netflix)',
+
+    // ТОПТОР БӨЛҮМҮНҮН АНГЛИСЧЕ СӨЗДӨРҮ
+    'my_groups_title': "My Groups",
+    'create_new_group': "Create new group",
+    'active_groups_list': "List of active groups",
+    'no_groups_yet': "You don't have any groups yet",
+    'group_direction_label': "Type",
+    'create_group_title': "Create Group",
+    'hint_group_name': "Name (apartment, dinner...)",
+    'hint_expense_amount': "Expense amount (optional)",
+    'group_direction_title': "Group Type",
+    'btn_create_group': "Create Group",
+    'type_housing': "Housing",
+    'type_cafe': "Cafe/Party",
+    'type_travel': "Travel",
+    'type_other': "Other",
+    'alert_enter_group_name': "Please enter a group name!",
+    'initial_expense_prefix': "Initial expense",
+    'group_created_success': "successfully created!",
+    'error_title': "Error",
+    'camera_not_available': "Camera not available.",
+    'choose_group_avatar': "Choose group avatar",
+    'take_photo': "Take a photo",
+    'choose_from_gallery': "Choose from gallery",
+
+    // СТАТИСТИКА БӨЛҮМҮНҮН АНГЛИСЧЕ СӨЗДӨРҮ
+    'analytics_title': 'Expense Analytics',
+    'analytics_empty_hint': 'Create groups and add expenses\nto see analytics',
+    'monthly_total_label': 'TOTAL MONTHLY EXPENSES',
+    'category_analytics_title': 'Analytics by Categories',
+    'calendar_payments_title': 'Payment Calendar',
+    'day_events_label': 'Day Events',
+    'no_events_empty_hint':
+        'There are no scheduled payments\nor expenses on this day',
+    'monthly_sub_label': 'Monthly subscription',
+    'expense_label': 'Expense',
   };
 }

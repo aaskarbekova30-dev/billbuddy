@@ -128,13 +128,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   decimal: true,
                 ),
                 style: const TextStyle(color: AppColors.textWhite),
-                decoration: const InputDecoration(
-                  labelText: 'Суммасы (\$)',
-                  labelStyle: TextStyle(color: AppColors.textGray),
-                  enabledBorder: UnderlineInputBorder(
+                decoration: InputDecoration(
+                  labelText: langProvider.translate ('amount'),
+                  labelStyle: const TextStyle(color: AppColors.textGray),
+                  enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.textGray),
                   ),
-                  focusedBorder: UnderlineInputBorder(
+                  focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.primary),
                   ),
                 ),

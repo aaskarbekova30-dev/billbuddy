@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../constants/app_colors.dart';
 import '../logic/providers/expense_provider.dart';
+import '../logic/providers/language_provider.dart';
 import '../models/subscription_model.dart';
 import '../models/expense_model.dart';
 
@@ -24,35 +25,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _selectedDay = _focusedDay;
   }
 
-  // Тандалган күнү кандай төлөмдөр (жазылуулар же чыгашалар) бар экенин аныктоочу жардамчы функция
-  List<dynamic> _getEventsForDay(DateTime day, List<SubscriptionModel> subs, List<ExpenseModel> expenses) {
+  List<dynamic> _getEventsForDay(
+    DateTime day,
+    List<SubscriptionModel> subs,
+    List<ExpenseModel> expenses,
+  ) {
     List<dynamic> events = [];
-
-    // 1. Абонементтердин күнүн текшерүү (Ай сайын кайталанат)
     for (var sub in subs) {
       if (sub.paymentDay == day.day) {
         events.add(sub);
       }
     }
-
-    // 2. Күнүмдүк чыгашалардын күнүн текшерүү
     for (var exp in expenses) {
-      if (exp.date.year == day.year && exp.date.month == day.month && exp.date.day == day.day) {
+      if (exp.date.year == day.year &&
+          exp.date.month == day.month &&
+          exp.date.day == day.day) {
         events.add(exp);
       }
     }
-
     return events;
   }
 
   @override
   Widget build(BuildContext context) {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
+    final langProvider = Provider.of<LanguageProvider>(context);
+
     final subs = expenseProvider.subscriptions;
     final expenses = expenseProvider.expenses;
-
-    // Тандалган күндөгү ивенттердин тизмеси
-    final selectedEvents = _getEventsForDay(_selectedDay ?? _focusedDay, subs, expenses);
+    final selectedEvents = _getEventsForDay(
+      _selectedDay ?? _focusedDay,
+      subs,
+      expenses,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,15 +68,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textWhite),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Календарь платежей',
-          style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+        title: Text(
+          langProvider.translate('calendar_payments_title'),
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // 📅 СТИЛДҮҮ КАРА-КӨК КАЛЕНДАРЬ ВИДЖЕТИ
           Container(
             margin: const EdgeInsets.all(15),
             decoration: BoxDecoration(
@@ -79,6 +86,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: TableCalendar(
+              locale: langProvider.currentLang == 'ky'
+                  ? 'ky_KG'
+                  : (langProvider.currentLang == 'ru' ? 'ru_RU' : 'en_US'),
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
@@ -100,8 +110,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
               },
-                            // Календардын сырткы көрүнүшүн кооздоо (Сиздин кара-көк стилиңизде)
-                            // 🌟 КАТАСЫЗ ЖАНА ТУУРА ЖОЛУ:
               calendarStyle: const CalendarStyle(
                 defaultTextStyle: TextStyle(color: AppColors.textWhite),
                 weekendTextStyle: TextStyle(color: Colors.redAccent),
@@ -111,82 +119,93 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: BoxDecoration(
-                  color: AppColors.primary, // Тандалган күн сиздин жашыл түстө болот
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
                 markerDecoration: BoxDecoration(
-                  color: Color(0xFFFFCA28), // Чыгашалар үчүн сары чекит
+                  color: Color(0xFFFFCA28),
                   shape: BoxShape.circle,
                 ),
               ),
               headerStyle: const HeaderStyle(
                 formatButtonVisible: true,
                 titleCentered: true,
-                titleTextStyle: TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.bold),
-                formatButtonTextStyle: TextStyle(color: AppColors.background, fontWeight: FontWeight.bold),
+                titleTextStyle: TextStyle(
+                  color: AppColors.textWhite,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                formatButtonTextStyle: TextStyle(
+                  color: AppColors.background,
+                  fontWeight: FontWeight.bold,
+                ),
                 formatButtonDecoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.all(Radius.circular(12.0)),
                 ),
-                leftChevronIcon: Icon(Icons.chevron_left, color: AppColors.textWhite),
-                rightChevronIcon: Icon(Icons.chevron_right, color: AppColors.textWhite),
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: AppColors.textWhite,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textWhite,
+                ),
               ),
-              // Күндөрдүн астына кооз чекиттерди (маркерлерди) коюу логикасы
               eventLoader: (day) {
                 return _getEventsForDay(day, subs, expenses);
               },
             ),
           ),
-          
+
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
               children: [
                 Text(
-                  'События дня: ${_selectedDay?.day}.${_selectedDay?.month}.${_selectedDay?.year}',
-                  style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.bold),
+                  '${langProvider.translate('day_events_label')}: ${_selectedDay?.day}.${_selectedDay?.month}.${_selectedDay?.year}',
+                  style: const TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 10),
 
-          // 📜 ТАНДАЛГАН КҮНДҮН ТӨЛӨМДӨР ТИЗМЕСИ
-                    // 📜 ТАНДАЛГАН КҮНДҮН ТӨЛӨМДӨР ТИЗМЕСИ
           Expanded(
             child: selectedEvents.isEmpty
-                ? const Center(
-                    // 🌟 ОҢДОЛДУ: Сүйлөм толугу менен экрандын так ортосуна кооз болуп жайгашат
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.calendar_today_outlined, 
-                          color: AppColors.textGray, 
-                          size: 40,
+                        const Icon(
+                          Icons.date_range_rounded,
+                          color: AppColors.primary,
+                          size: 44,
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         Text(
-                          'В этот день нет запланированных\nплатежей или расходов',
+                          langProvider.translate('no_events_empty_hint'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.textGray, 
+                          style: const TextStyle(
+                            color: AppColors.textGray,
                             fontSize: 14,
-                            height: 1.4, // Саптардын ортосундагы кооз боштук
+                            height: 1.4,
                           ),
                         ),
                       ],
                     ),
                   )
                 : ListView.builder(
-
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: selectedEvents.length,
                     itemBuilder: (context, index) {
                       final item = selectedEvents[index];
-                      
-                      // Эгер бул Абонемент (Subscription) болсо:
+
                       if (item is SubscriptionModel) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -194,28 +213,60 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.cardBg,
                             borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1), // Жашыл сызык
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.5),
+                              width: 1,
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded, color: AppColors.primary, size: 28),
-                              const SizedBox(width: 15),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.name, style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  const Text('Ежемесячный абонемент', style: TextStyle(color: AppColors.textGray, fontSize: 12)),
-                                ],
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppColors.primary,
+                                size: 28,
                               ),
-                              const Spacer(),
-                              Text('\$${item.price.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppColors.textWhite,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      langProvider.translate(
+                                        'monthly_sub_label',
+                                      ),
+                                      style: const TextStyle(
+                                        color: AppColors.textGray,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '\$${item.price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         );
                       }
-                      
-                      // Эгер бул кадимки Чыгаша (Expense) болсо:
+
                       if (item is ExpenseModel) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -226,18 +277,46 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.arrow_downward_rounded, color: Colors.orangeAccent, size: 24),
-                              const SizedBox(width: 15),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.title, style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 4),
-                                  const Text('Расход', style: TextStyle(color: AppColors.textGray, fontSize: 12)),
-                                ],
+                              const Icon(
+                                Icons.arrow_downward_rounded,
+                                color: Colors.orangeAccent,
+                                size: 24,
                               ),
-                              const Spacer(),
-                              Text('\$${item.amount.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppColors.textWhite,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      langProvider.translate('expense_label'),
+                                      style: const TextStyle(
+                                        color: AppColors.textGray,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '\$${item.amount.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: AppColors.textWhite,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -251,4 +330,3 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 }
-

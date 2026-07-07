@@ -2,32 +2,45 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../logic/providers/language_provider.dart';
+import '../logic/providers/supabase_provider.dart';
 
-// 🌟 1. НЕГИЗГИ ӨТМӨК БАРАГЫ (Төмөнкү менюдан басканда ушул барак ачылат)
 class GroupsScreen extends StatelessWidget {
   const GroupsScreen({super.key});
 
   IconData _getIconForType(String type) {
-    switch (type) {
-      case 'Жильё': return Icons.home_work_rounded;
-      case 'Кафе/Праздник': return Icons.local_pizza_rounded;
-      case 'Поездки': return Icons.directions_car_rounded;
-      default: return Icons.more_horiz_rounded;
+    if (type == 'Жильё' || type == 'Үй-жай' || type == 'Housing') {
+      return Icons.home_work_rounded;
     }
+    if (type == 'Кафе/Праздник' ||
+        type == 'Кафе/Майрам' ||
+        type == 'Cafe/Party') {
+      return Icons.local_pizza_rounded;
+    }
+    if (type == 'Поездки' || type == 'Сапарлар' || type == 'Travel') {
+      return Icons.directions_car_rounded;
+    }
+    return Icons.more_horiz_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, // 🌟 Артка кайтуу жебеси алынды
-        title: const Text(
-          'Мои группы',
-          style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+        automaticallyImplyLeading: false,
+        title: Text(
+          langProvider.translate('my_groups_title'),
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -42,25 +55,40 @@ class GroupsScreen extends StatelessWidget {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CreateGroupFormScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const CreateGroupFormScreen(),
+                    ),
                   );
                 },
-                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.background),
-                label: const Text(
-                  'Создать новую группу',
-                  style: TextStyle(color: AppColors.background, fontSize: 16, fontWeight: FontWeight.bold),
+                icon: const Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: AppColors.background,
+                ),
+                label: Text(
+                  langProvider.translate('create_new_group'),
+                  style: const TextStyle(
+                    color: AppColors.background,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Список активных групп',
-              style: TextStyle(color: AppColors.textWhite, fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              langProvider.translate('active_groups_list'),
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 15),
             Expanded(
@@ -68,8 +96,11 @@ class GroupsScreen extends StatelessWidget {
                 valueListenable: Hive.box('groups_box').listenable(),
                 builder: (context, Box box, _) {
                   if (box.isEmpty) {
-                    return const Center(
-                      child: Text('У вас пока нет созданных групп', style: TextStyle(color: AppColors.textGray)),
+                    return Center(
+                      child: Text(
+                        langProvider.translate('no_groups_yet'),
+                        style: const TextStyle(color: AppColors.textGray),
+                      ),
                     );
                   }
                   return ListView.builder(
@@ -95,19 +126,35 @@ class GroupsScreen extends StatelessWidget {
                             child: imagePath.isNotEmpty
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
-                                    child: Image.file(File(imagePath), fit: BoxFit.cover),
+                                    child: Image.file(
+                                      File(imagePath),
+                                      fit: BoxFit.cover,
+                                    ),
                                   )
-                                : Icon(_getIconForType(group['type']), color: AppColors.primary),
+                                : Icon(
+                                    _getIconForType(group['type']),
+                                    color: AppColors.primary,
+                                  ),
                           ),
                           title: Text(
                             group['name'],
-                            style: const TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: AppColors.textWhite,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           subtitle: Text(
-                            'Категория: ${group['type']}',
-                            style: const TextStyle(color: AppColors.textGray, fontSize: 13),
+                            '${langProvider.translate('group_direction_label')}: ${group['type']}',
+                            style: const TextStyle(
+                              color: AppColors.textGray,
+                              fontSize: 13,
+                            ),
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textGray, size: 16),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: AppColors.textGray,
+                            size: 16,
+                          ),
                         ),
                       );
                     },
@@ -134,44 +181,43 @@ class _MainGroupType {
   final IconData icon;
   _MainGroupType(this.title, this.icon);
 }
+
 class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
   int _selectedTypeIndex = 3;
-  File? _imageFile; 
+  File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  
-  // 🌟 ЖАҢЫЛАНДЫ: Эми сумманы да окуп алуу үчүн өзүнчө контроллер кошулду
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-
-  final List<_MainGroupType> _groupTypes = [
-    _MainGroupType('Жильё', Icons.home_work_rounded),       
-    _MainGroupType('Кафе/Праздник', Icons.local_pizza_rounded), 
-    _MainGroupType('Поездки', Icons.directions_car_rounded),  
-    _MainGroupType('Другое', Icons.more_horiz_rounded),       
-  ];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _amountController.dispose(); // Эстутумду тазалоо
+    _amountController.dispose();
     super.dispose();
   }
 
   void _saveGroup() {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
     final groupName = _nameController.text.trim();
     final amountText = _amountController.text.trim();
 
+    String selectedTypeKey = 'type_other';
+    if (_selectedTypeIndex == 0) selectedTypeKey = 'type_housing';
+    if (_selectedTypeIndex == 1) selectedTypeKey = 'type_cafe';
+    if (_selectedTypeIndex == 2) selectedTypeKey = 'type_travel';
+    final translatedType = langProvider.translate(selectedTypeKey);
+
     if (groupName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Пожалуйста, введите название группы!'),
+        SnackBar(
+          content: Text(langProvider.translate('alert_enter_group_name')),
           backgroundColor: AppColors.alert,
         ),
       );
       return;
     }
 
-    // Сумманы сан форматына айландыруу (эгер жазылбаса 0.0 болот)
     double enteredAmount = 0.0;
     if (amountText.isNotEmpty) {
       enteredAmount = double.tryParse(amountText) ?? 0.0;
@@ -180,44 +226,73 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
     final groupsBox = Hive.box('groups_box');
     final newGroup = {
       'name': groupName,
-      'type': _groupTypes[_selectedTypeIndex].title,
-      'imagePath': _imageFile?.path ?? '', 
+      'type': translatedType,
+      'imagePath': _imageFile?.path ?? '',
       'createdAt': DateTime.now().toString(),
     };
 
     groupsBox.add(newGroup);
+        // 🌟 ЖАҢЫ КОШУЛДУ: Жаңы топту дароо Супабейс серверине (булутка) жөнөтөбүз!
+    try {
+      final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
+      supabaseProvider.addGroup(
+        name: groupName,
+        type: translatedType,
+        imagePath: _imageFile?.path ?? '',
+      );
+      
+      // Эгер колдонуучу сумма киргизген болсо, аны да өзүнчө 'expenses' таблицасына кошо жөнөтөбүз
+      if (enteredAmount > 0) {
+        supabaseProvider.addExpense(
+          title: '${langProvider.translate('initial_expense_prefix')} ($groupName)',
+          amount: enteredAmount,
+          groupName: groupName,
+        );
+      }
+    } catch (e) {
+      debugPrint('Серверге жүктөөдө ката: $e');
+    }
 
-    // 🌟 ЖАҢЫ ЛОГИКА: Түзүлгөн сумманы дароо башкы бет уга тургандай кылып 'billbuddy_box' базасына кошуп коёбуз!
+
     try {
       final mainBox = Hive.box('billbuddy_box');
-      List<dynamic> savedRaw = mainBox.get('expenses_list_raw', defaultValue: []);
-      
-      // Башка чыгашалар сыяктуу эле кутучага Map түрүндө сактайбыз
+      List<dynamic> savedRaw = mainBox.get(
+        'expenses_list_raw',
+        defaultValue: [],
+      );
+
       final newExpenseFromGroup = {
-        'title': 'Начальный расход ($groupName)', // Топтун аты менен байланыштырабыз
+        'title':
+            '${langProvider.translate('initial_expense_prefix')} ($groupName)',
         'amount': enteredAmount,
         'date': DateTime.now(),
       };
-      
+
       List<dynamic> updatedList = List.from(savedRaw);
       updatedList.insert(0, newExpenseFromGroup);
       mainBox.put('expenses_list_raw', updatedList);
-      
-      // Ошондой эле жалпы балансты да ушул суммага көбөйтөбүз
+
       double currentTotal = mainBox.get('total_balance', defaultValue: 0.0);
       mainBox.put('total_balance', currentTotal + enteredAmount);
     } catch (e) {
-      // Базада убактылуу мүчүлүштүк болсо ката бербейт
+      // Base ката бербейт
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Группа "$groupName" на сумму \$$enteredAmount успешно создана!'),
+        content: Text(
+          '"$groupName" ${langProvider.translate('group_created_success')} (\$$enteredAmount)',
+        ),
         backgroundColor: AppColors.primary,
       ),
     );
 
-    Navigator.pop(context);
+    _nameController.clear();
+    _amountController.clear();
+    setState(() {
+      _imageFile = null;
+      _selectedTypeIndex = 3;
+    });
   }
 
   Future<void> _pickImageFromGallery() async {
@@ -233,6 +308,7 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
   }
 
   Future<void> _pickImageFromCamera() async {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.camera,
@@ -248,8 +324,8 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Camera not available.'),
+          title: Text(langProvider.translate('error_title')),
+          content: Text(langProvider.translate('camera_not_available')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -262,6 +338,7 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
   }
 
   void _showAvatarPicker() {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.cardBg,
@@ -272,24 +349,40 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
         return SafeArea(
           child: Wrap(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Выбрать аватар группы',
-                  style: TextStyle(color: AppColors.textWhite, fontSize: 18, fontWeight: FontWeight.bold),
+                  langProvider.translate('choose_group_avatar'),
+                  style: const TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-                title: const Text('Сделать фото', style: TextStyle(color: AppColors.textWhite)),
+                leading: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  langProvider.translate('take_photo'),
+                  style: const TextStyle(color: AppColors.textWhite),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImageFromCamera();
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.image_rounded, color: AppColors.primary),
-                title: const Text('Выбрать из галереи', style: TextStyle(color: AppColors.textWhite)),
+                leading: const Icon(
+                  Icons.image_rounded,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  langProvider.translate('choose_from_gallery'),
+                  style: const TextStyle(color: AppColors.textWhite),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImageFromGallery();
@@ -304,8 +397,29 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+
+    final List<_MainGroupType> groupTypes = [
+      _MainGroupType(
+        langProvider.translate('type_housing'),
+        Icons.home_work_rounded,
+      ),
+      _MainGroupType(
+        langProvider.translate('type_cafe'),
+        Icons.local_pizza_rounded,
+      ),
+      _MainGroupType(
+        langProvider.translate('type_travel'),
+        Icons.directions_car_rounded,
+      ),
+      _MainGroupType(
+        langProvider.translate('type_other'),
+        Icons.more_horiz_rounded,
+      ),
+    ];
+
     return Scaffold(
-      backgroundColor: AppColors.background, 
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -313,135 +427,193 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textWhite),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Создать группу',
-          style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
+        title: Text(
+          langProvider.translate('create_group_title'),
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView( // Экранга бары батыш үчүн сыдырма кылынды
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. НАЗВАНИЕ ГРУППЫ КАРТАСЫ
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg, 
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _showAvatarPicker,
-                      child: Container(
-                        width: 55,
-                        height: 55,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: AppColors.primary, width: 1.5), 
-                        ),
-                        child: _imageFile != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(13),
-                                child: Image.file(_imageFile!, fit: BoxFit.cover),
-                              )
-                            : const Icon(Icons.add_a_photo_outlined, color: AppColors.textGray),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: TextField(
-                        controller: _nameController, 
-                        style: const TextStyle(color: AppColors.textWhite, fontSize: 18),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none, 
-                          hintText: 'Название (аппартаменты, ужин...)',
-                          hintStyle: TextStyle(color: AppColors.textGray, fontSize: 15),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(height: 20),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _showAvatarPicker,
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: _imageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(13),
+                              child: Image.file(_imageFile!, fit: BoxFit.cover),
+                            )
+                          : const Icon(
+                              Icons.add_a_photo_outlined,
+                              color: AppColors.textGray,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: TextField(
+                      controller: _nameController,
+                      style: const TextStyle(
+                        color: AppColors.textWhite,
+                        fontSize: 18,
+                      ),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: langProvider.translate('hint_group_name'),
+                        hintStyle: const TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 15),
 
-              // 🌟 2. ЖАҢЫ КОШУЛДУ: СУММА КИРГИЗҮҮ ТАЛААСЫ
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg, 
-                  borderRadius: BorderRadius.circular(20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: AppColors.textWhite, fontSize: 18),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    icon: Icon(Icons.attach_money_rounded, color: AppColors.primary),
-                    hintText: 'Сумма расхода (необязательно)',
-                    hintStyle: TextStyle(color: AppColors.textGray, fontSize: 15),
+                style: const TextStyle(
+                  color: AppColors.textWhite,
+                  fontSize: 18,
+                ),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  icon: const Icon(
+                    Icons.attach_money_rounded,
+                    color: AppColors.primary,
+                  ),
+                  hintText: langProvider.translate('hint_expense_amount'),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textGray,
+                    fontSize: 15,
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 25),
-              const Text(
-                'Тип группы',
-                style: TextStyle(color: AppColors.textWhite, fontSize: 16, fontWeight: FontWeight.w500),
+            const SizedBox(height: 20),
+            Text(
+              langProvider.translate('group_direction_title'),
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(_groupTypes.length, (index) {
-                  final isSelected = _selectedTypeIndex == index;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTypeIndex = index;
-                      });
-                    },
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.22, 
-                      padding: const EdgeInsets.symmetric(vertical: 12),decoration: 
-                      BoxDecoration(color: isSelected ? AppColors.cardBg : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.textGray.withValues(
-                          alpha: 0.3),width: isSelected ? 2 : 1,),),child: Column(mainAxisSize: 
-                          MainAxisSize.min,children: [Icon(_groupTypes[index].icon,
-                          color: isSelected ? AppColors.primary : AppColors.textWhite,size: 28,),
-                          const SizedBox(height: 8),Text(_groupTypes[index].title,textAlign: 
-                          TextAlign.center,style: TextStyle(
-                            color: isSelected ? AppColors.textWhite : AppColors.textGray,fontSize: 11,
-                            ),
-                            ),
-                            ],
-                            ),
-                            ),
-                            );
-                            }
-                            ),
-                            ),
-                            const SizedBox(height: 40),SizedBox(width: double.infinity,height: 50,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              ),
-                              onPressed: _saveGroup,child: const Text(
-                                'Создать группу',style: TextStyle(color: AppColors.background, 
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                ),
-                                ),
-                                ],
-                                ),
-                                ),
-                                ),
-                                );
-                                }
-                                }
+            ),
+            const SizedBox(height: 10),
 
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(groupTypes.length, (index) {
+                final isSelected = _selectedTypeIndex == index;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedTypeIndex = index;
+                    });
+                  },
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.22,
+                    height: 90,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.cardBg : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textGray.withValues(alpha: 0.3),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          groupTypes[index].icon,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textWhite,
+                          size: 26,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          groupTypes[index].title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppColors.textWhite
+                                : AppColors.textGray,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                onPressed: _saveGroup,
+                child: Text(
+                  langProvider.translate('btn_create_group'),
+                  style: const TextStyle(
+                    color: AppColors.background,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -15,23 +15,31 @@ class LanguageProvider with ChangeNotifier {
     _loadLanguage();
   }
 
-  // Телефондун эс тутумунан сакталган тилди окуу
+  // Телефондун эс тутумунан сакталган тилди коопсуз окуу
   void _loadLanguage() async {
-    var box = await Hive.openBox(_boxName);
-    _currentLang = box.get(_langKey, defaultValue: 'ky');
-    notifyListeners();
+    try {
+      var box = await Hive.openBox(_boxName);
+      _currentLang = box.get(_langKey, defaultValue: 'ky');
+      notifyListeners();
+    } catch (e) {
+      _currentLang = 'ky'; // Ката чыкса дефолттук кыргыз тили калат
+      notifyListeners();
+    }
   }
-
-  // Тилди алмаштыруу жана Hive'га сактоо
+    // Тилди алмаштыруу жана Hive'га коопсуз сактоо
   void changeLanguage(String langCode) async {
     _currentLang = langCode;
     notifyListeners(); // Экрандагы тилдерди дароо жаңылайт
 
-    var box = Hive.box(_boxName);
-    await box.put(_langKey, langCode);
+    try {
+      var box = Hive.box(_boxName);
+      await box.put(_langKey, langCode);
+    } catch (e) {
+      // База убактылуу ачыла элек болсо тиркеме сынбайт
+    }
   }
 
-  // Экранга сөздөрдү тандалган тилде кайтаруучу негизги функция
+  // 🌟 ЖАҢЫЛАНДЫ: Экранга сөздөрдү тандалган тилде кайтаруучу негизги функция
   String translate(String key) {
     switch (_currentLang) {
       case 'ru':
@@ -44,3 +52,4 @@ class LanguageProvider with ChangeNotifier {
     }
   }
 }
+
