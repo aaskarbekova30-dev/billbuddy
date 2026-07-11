@@ -23,6 +23,8 @@ class AppStrings {
     'feedback': 'Сунуштар',
     'logout': 'Чыгуу',
     'app_version': 'Тиркеменин версиясы',
+    'edit_name_title': 'Атыңызды өзгөртүңүз',
+    'cancel': 'Жок',
 
     // ТОПТОР БӨЛҮМҮНҮН КЫРГЫЗЧА СӨЗДӨРҮ
     'my_groups_title': "Менин топторум",
@@ -81,6 +83,8 @@ class AppStrings {
     'save': 'Сохранить',
     'enter_all_fields': 'Пожалуйста, заполните все поля',
     'account_title': 'Account',
+    'edit_name_title': 'Измените имя',
+    'cancel': 'Отмена',
     'preferences': 'Настройки',
     'feedback': 'Обратная связь',
     'logout': 'Выйти',
@@ -149,6 +153,8 @@ class AppStrings {
     'save': 'Save',
     'enter_all_fields': 'Please fill in all fields',
     'account_title': 'Account',
+    'edit_name_title': 'Change your name',
+    'cancel': 'Cancel',
     'preferences': 'Preferences',
     'feedback': 'Feedback',
     'logout': 'Log out',

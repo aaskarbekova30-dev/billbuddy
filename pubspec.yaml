@@ -46,7 +46,7 @@ dependencies:
   table_calendar: ^3.2.0
   image_picker: ^1.2.3
   intl: ^0.20.3
-  supabase_flutter: ^2.15.4
+  supabase_flutter: ^2.16.0
 
 dev_dependencies:
   flutter_test:

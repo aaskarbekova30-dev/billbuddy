@@ -1,7 +1,9 @@
+import 'package:billbuddy/screens/login_screen.dart' show LoginScreen;
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../logic/bloc/auth_bloc.dart'; // Сиздин AuthBloc импорту
 import '../logic/providers/language_provider.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -40,7 +42,7 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   // Атты өзгөртүүчү диалогдук терезени ачуу функциясы
-  void _showEditNameDialog(BuildContext context, String currentName) {
+  void _showEditNameDialog(BuildContext context, String currentName, LanguageProvider langProvider) {
     final nameController = TextEditingController(text: currentName);
 
     showDialog(
@@ -48,9 +50,10 @@ class _AccountScreenState extends State<AccountScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: AppColors.cardBg,
-          title: const Text(
-            'Атыңызды өзгөртүңүз',
-            style: TextStyle(color: AppColors.textWhite),
+          title: Text(
+            // Тилге жараша өзгөрөт: "Измените имя" же "Атыңызды өзгөртүңүз"
+            langProvider.translate('edit_name_title'),
+            style: const TextStyle(color: AppColors.textWhite),
           ),
           content: TextField(
             controller: nameController,
@@ -67,9 +70,9 @@ class _AccountScreenState extends State<AccountScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Жок',
-                style: TextStyle(color: AppColors.textGray),
+              child: Text(
+                langProvider.translate('cancel'),
+                style: const TextStyle(color: AppColors.textGray),
               ),
             ),
             ElevatedButton(
@@ -82,9 +85,10 @@ class _AccountScreenState extends State<AccountScreen> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text(
-                'Ырастоо',
-                style: TextStyle(color: AppColors.background),
+              child: Text(
+                // 🔥 УНИВЕРСАЛДУУ ТЕРМИН: "Ырастоо" сөзү "Сактоо" (Сохранить) терминине алмаштырылды
+                langProvider.translate('save'),
+                style: const TextStyle(color: AppColors.background, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -127,9 +131,8 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(height: 15),
 
-            // 🔥 ТҮЗӨТҮЛДҮ: Атты басканда аны өзгөртүүчү терезе ачылат жана жанында карандаш иконкасы турат
             InkWell(
-              onTap: () => _showEditNameDialog(context, _currentUserName),
+              onTap: () => _showEditNameDialog(context, _currentUserName, langProvider),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -159,19 +162,39 @@ class _AccountScreenState extends State<AccountScreen> {
             _buildMenuItem(
               icon: Icons.settings_suggest_outlined,
               title: langProvider.translate('preferences'),
-              onTap: () {},
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${langProvider.translate('preferences')} жакында ишке кирет!')),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.chat_bubble_outline_rounded,
               title: langProvider.translate('feedback'),
-              onTap: () {},
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${langProvider.translate('feedback')} жакында ишке кирет!')),
+                );
+              },
             ),
+            
+            // 🔥 ТҮЗӨТҮЛДҮ: "Чыгуу" баскычы реалдуу AuthBloc жана Супабейс менен туташтырылды
             _buildMenuItem(
               icon: Icons.logout_rounded,
               title: langProvider.translate('logout'),
               iconColor: AppColors.alert,
               textColor: AppColors.alert,
-              onTap: () {},
+              onTap: () {
+                // 1. Блокко чыгуу окуясын жөнөтөбүз
+                context.read<AuthBloc>().add(SignOutRequested());
+
+                // 2. Логин экранына кайтарабыз жана артка кайтпай турган кылып тазалайбыз
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
             ),
 
             const Spacer(),
@@ -224,7 +247,7 @@ class _AccountScreenState extends State<AccountScreen> {
               const Spacer(),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: iconColor.withValues(alpha: 0.5),
+                color: iconColor.withAlpha(128), // Түзөтүлдү: Эски .withValues ордуна туруктуу иштеген .withAlpha коюлду
                 size: 14,
               ),
             ],

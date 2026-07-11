@@ -1,4 +1,5 @@
 import 'package:billbuddy/logic/providers/expense_provider.dart';
+import 'package:billbuddy/screens/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -14,7 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // 🌟 ЖАҢЫ КОШУЛДУ: Жаңы навигация экранын бул жерге импорттодук
 import 'logic/providers/supabase_provider.dart';
-import 'main_navigation_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +67,7 @@ class BillBuddyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
       // 🌟 ОҢДОЛДУ: Эми тиркеме түз эле навигация менюсу бар баракты ачат
-      home: const MainNavigationScreen(),
+      home: const AuthGate(),
     );
   }
 }
