@@ -1,4 +1,4 @@
-package com.example.billbuddy
+package com.aijamal.billbuddy
 
 import io.flutter.embedding.android.FlutterActivity
 
