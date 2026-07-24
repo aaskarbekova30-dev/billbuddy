@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// 🌟 Сиздин долбоордогу Блок файлы жайгашкан так даректи жазыңыз
+//  Сиздин долбоордогу Блок файлы жайгашкан так даректи жазыңыз
 import '../logic/bloc/expenses_bloc.dart'; 
 
 class MyExpensesPage extends StatelessWidget {
@@ -36,13 +36,13 @@ class MyExpensesPage extends StatelessWidget {
     return Icons.account_balance_wallet_rounded; 
   }
 
-  // 🌟 Базадан бардык жеткиликтүү группаларды жүктөп келүүчү кошумча функция
+  // Базадан бардык жеткиликтүү группаларды жүктөп келүүчү кошумча функция
   Future<List<Map<String, dynamic>>> _fetchGroups() async {
     final data = await Supabase.instance.client.from('groups').select('id, name');
     return List<Map<String, dynamic>>.from(data);
   }
 
-  // 🌟 ЖАҢЫЛАНДЫ: Жаңы чыгым кошуу үчүн кооз терезе (DropdownButton менен)
+  // ЖАҢЫЛАНДЫ: Жаңы чыгым кошуу үчүн кооз терезе (DropdownButton менен)
   void _showAddExpenseDialog(BuildContext context, ExpensesBloc bloc) {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
@@ -86,7 +86,7 @@ class MyExpensesPage extends StatelessWidget {
                   const Text('Топту тандаңыз:', style: TextStyle(color: Colors.grey, fontSize: 14)),
                   const SizedBox(height: 8),
                   
-                  // 🌟 ДАЯР ГРУППАЛАРДЫН ТИЗМЕСИН КӨРСӨТҮҮЧҮ FUTUREBUILDER
+                  // ДАЯР ГРУППАЛАРДЫН ТИЗМЕСИН КӨРСӨТҮҮЧҮ FUTUREBUILDER
                   FutureBuilder<List<Map<String, dynamic>>>(
                     future: _fetchGroups(),
                     builder: (context, snapshot) {
@@ -148,7 +148,7 @@ class MyExpensesPage extends StatelessWidget {
                     final amount = double.tryParse(amountController.text) ?? 0.0;
 
                     if (title.isNotEmpty && amount > 0 && selectedGroupId != null) {
-                      // 🌟 Блокко тандалган группанын ID'си менен окуя жиберебиз
+                      // Блокко тандалган группанын ID'си менен окуя жиберебиз
                       bloc.add(AddExpenseEvent(title: title, amount: amount, groupId: selectedGroupId!));
                       Navigator.pop(dialogContext);
                     }

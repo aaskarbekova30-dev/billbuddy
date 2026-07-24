@@ -1,10 +1,10 @@
-import 'package:billbuddy/screens/login_screen.dart' show LoginScreen;
+import 'package:billbuddy/screens/auth_gate.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_colors.dart';
-import '../logic/bloc/auth_bloc.dart'; // Сиздин AuthBloc импорту
 import '../logic/providers/language_provider.dart';
+import '../logic/providers/supabase_provider.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -14,35 +14,22 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  final String _boxName = 'billbuddy_box';
-  final String _userNameKey = 'user_name_key';
-  String _currentUserName = 'Айжамал'; // Баштапкы ат
-
   @override
   void initState() {
     super.initState();
-    _loadUserName();
-  }
-
-  // Базадан колдонуучунун атын окуу
-  void _loadUserName() async {
-    var box = await Hive.openBox(_boxName);
-    setState(() {
-      _currentUserName = box.get(_userNameKey, defaultValue: 'Асан');
-    });
-  }
-
-  // Жаңы атты базага сактоо
-  void _saveUserName(String newName) async {
-    var box = Hive.box(_boxName);
-    await box.put(_userNameKey, newName);
-    setState(() {
-      _currentUserName = newName;
+    // Экран ачылганда Супабейстен акыркы профиль маалыматын жаңылайбыз
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseProvider>().fetchProfile();
     });
   }
 
   // Атты өзгөртүүчү диалогдук терезени ачуу функциясы
-  void _showEditNameDialog(BuildContext context, String currentName, LanguageProvider langProvider) {
+  void _showEditNameDialog(
+    BuildContext context, 
+    String currentName, 
+    LanguageProvider langProvider,
+    SupabaseProvider supabaseProvider,
+  ) {
     final nameController = TextEditingController(text: currentName);
 
     showDialog(
@@ -51,7 +38,6 @@ class _AccountScreenState extends State<AccountScreen> {
         return AlertDialog(
           backgroundColor: AppColors.cardBg,
           title: Text(
-            // Тилге жараша өзгөрөт: "Измените имя" же "Атыңызды өзгөртүңүз"
             langProvider.translate('edit_name_title'),
             style: const TextStyle(color: AppColors.textWhite),
           ),
@@ -79,14 +65,14 @@ class _AccountScreenState extends State<AccountScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
-              onPressed: () {
+              onPressed: () async {
                 if (nameController.text.trim().isNotEmpty) {
-                  _saveUserName(nameController.text.trim());
-                  Navigator.pop(context);
+                  // Түз эле Супабейс серверине сактайбыз
+                  await supabaseProvider.updateProfile(nameController.text.trim());
+                  if (context.mounted) Navigator.pop(context);
                 }
               },
               child: Text(
-                // 🔥 УНИВЕРСАЛДУУ ТЕРМИН: "Ырастоо" сөзү "Сактоо" (Сохранить) терминине алмаштырылды
                 langProvider.translate('save'),
                 style: const TextStyle(color: AppColors.background, fontWeight: FontWeight.bold),
               ),
@@ -100,6 +86,8 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context); 
+    final currentUserName = supabaseProvider.userName;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -116,104 +104,85 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
+      body: supabaseProvider.isLoading 
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
 
-            // --- КОЛДОНУУЧУНУН АВАТАРЫ ЖАНА АТЫ ---
-            const CircleAvatar(
-              radius: 45,
-              backgroundColor: AppColors.textWhite,
-              child: Icon(Icons.person, size: 50, color: AppColors.background),
-            ),
-            const SizedBox(height: 15),
+                  // --- КОЛДОНУУЧУНУН АВАТАРЫ ЖАНА АТЫ ---
+                  const CircleAvatar(
+                    radius: 45,
+                    backgroundColor: AppColors.textWhite,
+                    child: Icon(Icons.person, size: 50, color: AppColors.background),
+                  ),
+                  const SizedBox(height: 15),
 
-            InkWell(
-              onTap: () => _showEditNameDialog(context, _currentUserName, langProvider),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 6.0,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _currentUserName,
-                      style: const TextStyle(
-                        color: AppColors.textWhite,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                  InkWell(
+                    onTap: () => _showEditNameDialog(context, currentUserName, langProvider, supabaseProvider),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 6.0,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            currentUserName,
+                            style: const TextStyle(
+                              color: AppColors.textWhite,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.edit, color: AppColors.primary, size: 18),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.edit, color: AppColors.primary, size: 18),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  _buildMenuItem(
+                    icon: Icons.logout_rounded,
+                    title: langProvider.translate('logout'),
+                    iconColor: AppColors.alert,
+                    textColor: AppColors.alert,
+                    onTap: () async {
+                      await Supabase.instance.client.auth.signOut();
+                      
+                      if (context.mounted) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const AuthGate()),
+                          (route) => false,
+                        );
+                      }
+                    },
+                  ),
+
+                  const Spacer(),
+
+                  Text(
+                    '${langProvider.translate('app_version')}: 1.0.0',
+                    style: const TextStyle(
+                      color: AppColors.textGray,
+                      fontSize: 12,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
-
-            // --- МЕНЮ ТИЗМЕСИ ---
-            _buildMenuItem(
-              icon: Icons.settings_suggest_outlined,
-              title: langProvider.translate('preferences'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${langProvider.translate('preferences')} жакында ишке кирет!')),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.chat_bubble_outline_rounded,
-              title: langProvider.translate('feedback'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${langProvider.translate('feedback')} жакында ишке кирет!')),
-                );
-              },
-            ),
-            
-            // 🔥 ТҮЗӨТҮЛДҮ: "Чыгуу" баскычы реалдуу AuthBloc жана Супабейс менен туташтырылды
-            _buildMenuItem(
-              icon: Icons.logout_rounded,
-              title: langProvider.translate('logout'),
-              iconColor: AppColors.alert,
-              textColor: AppColors.alert,
-              onTap: () {
-                // 1. Блокко чыгуу окуясын жөнөтөбүз
-                context.read<AuthBloc>().add(SignOutRequested());
-
-                // 2. Логин экранына кайтарабыз жана артка кайтпай турган кылып тазалайбыз
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-
-            const Spacer(),
-
-            Text(
-              '${langProvider.translate('app_version')}: 1.0.0',
-              style: const TextStyle(
-                color: AppColors.textGray,
-                fontSize: 12,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 
+  // Сиз жөнөткөн, withValues(alpha: 0.5) касиети бар виджет
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
@@ -236,20 +205,17 @@ class _AccountScreenState extends State<AccountScreen> {
             children: [
               Icon(icon, color: iconColor, size: 22),
               const SizedBox(width: 16),
-              Text(
-                title,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: iconColor.withAlpha(128), // Түзөтүлдү: Эски .withValues ордуна туруктуу иштеген .withAlpha коюлду
-                size: 14,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded, color: iconColor.withValues(alpha: 0.5), size: 16),
             ],
           ),
         ),

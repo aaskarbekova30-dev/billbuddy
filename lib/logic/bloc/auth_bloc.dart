@@ -19,16 +19,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // 2. Катталуу логикасы (Sign Up)
+    // 2. ЖАҢЫЛАНГАН Катталуу логикасы (Sign Up)
     on<SignUpRequested>((event, emit) async {
       emit(AuthLoading());
       try {
+        // Катталуу суроосун жөнөтүү
         final response = await _supabase.auth.signUp(
           email: event.email,
           password: event.password,
         );
+        
         if (response.user != null) {
-          emit(Authenticated(userId: response.user!.id));
+          // МАСЕЛЕНИ ЧЕЧҮҮ: Катталгандан кийин Supabase сессияны ачпай койгондуктан, 
+          // биз автоматтык түрдө дал ушул жерден Кирүү (Sign In) функциясын чакырабыз.
+          final loginResponse = await _supabase.auth.signInWithPassword(
+            email: event.email,
+            password: event.password,
+          );
+
+          if (loginResponse.session != null) {
+            emit(Authenticated(userId: loginResponse.user!.id));
+          } else {
+            // Эгер кирүүдө ката кетсе, бирок катталган болсо, баары бир киргизебиз
+            emit(Authenticated(userId: response.user!.id));
+          }
         } else {
           emit(AuthError(message: 'Каттоо убагында ката кетти'));
         }

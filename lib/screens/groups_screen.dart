@@ -232,7 +232,7 @@ class _CreateGroupFormScreenState extends State<CreateGroupFormScreen> {
     };
 
     groupsBox.add(newGroup);
-        // 🌟 ЖАҢЫ КОШУЛДУ: Жаңы топту дароо Супабейс серверине (булутка) жөнөтөбүз!
+        // Жаңы топту дароо Супабейс серверине (булутка) жөнөтөбүз!
     try {
       final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
       supabaseProvider.addGroup(

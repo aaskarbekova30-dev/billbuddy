@@ -32,7 +32,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
     );
     final langProvider = Provider.of<LanguageProvider>(
       context,
-    ); // 🔥 Тилди угуу
+    ); // Тилди угуу
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -40,7 +40,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textWhite),
-        // 🔥 ОҢДОЛГОН: "Жазылууну көзөмөлдөө" тексти тилге байланды
+        // "Жазылууну көзөмөлдөө" тексти тилге байланды
         title: Text(
           langProvider.translate('sub_title'),
           style: const TextStyle(
@@ -55,7 +55,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔥 ОҢДОЛГОН: "Тиркемени тандоо" тексти тилге байланды
+            // "Тиркемени тандоо" тексти тилге байланды
             Text(
               langProvider.translate('select_app'),
               style: const TextStyle(
@@ -84,7 +84,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 🔥 ОҢДОЛГОН: "Айлык акысы" тексти тилге байланды
+            // "Айлык акысы" тексти тилге байланды
             Text(
               langProvider.translate('monthly_price'),
               style: const TextStyle(
@@ -115,7 +115,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 🔥 ОҢДОЛГОН: "Айдын кайсы күнү төлөнөт?" тексти тилге байланды
+            // "Айдын кайсы күнү төлөнөт?" тексти тилге байланды
             Text(
               langProvider.translate('payment_day'),
               style: const TextStyle(
@@ -181,7 +181,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                     );
                   }
                 },
-                // 🔥 ОҢДОЛГОН: Баскычтын тексти да тилге байланды
+                // Баскычтын тексти да тилге байланды
                 child: Text(
                   langProvider.translate('add_button'),
                   style: const TextStyle(

@@ -1,25 +1,25 @@
-import 'package:billbuddy/app_config.dart'; // 🌟 ЖАҢЫ КОШУЛДУ
+import 'package:billbuddy/app_config.dart';
 import 'package:billbuddy/logic/providers/expense_provider.dart';
 import 'package:billbuddy/screens/auth_gate.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // 🌟 ЖАҢЫ КОШУЛДУ
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
-// Тил провайдеринин файлы
+// Провайдерлердин импорттору
 import 'package:billbuddy/logic/providers/language_provider.dart';
-
-// Билдирүү тутумунун импорту
+import 'package:billbuddy/logic/providers/supabase_provider.dart';
 import 'package:billbuddy/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Навигация экранын бул жерге импорттодук
-import 'logic/providers/supabase_provider.dart';
+// Сиздин AuthBloc файлыңыз жайгашкан жолду тактаңыз:
+import 'package:billbuddy/logic/bloc/auth_bloc.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔐 КООПСУЗДУК ОҢДОЛДУ: Эми ачкычтар app_config.dart файлынан түз жана туруктуу окулат
+  //  Supabase ишке киргизүү
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     // ignore: deprecated_member_use
@@ -34,22 +34,26 @@ void main() async {
     await initializeDateFormatting('ru_RU', null);
     await initializeDateFormatting('en_US', null);
   } catch (e) {
-    // Эгер симулятордо ката чыкса, тиркеме баары бир коопсуз күйө берет
+    // Ката чыкса, тиркеме коопсуз күйө берет
   }
 
-  // Тиркеме күйгөндө билдирүү тутумун активдештирүү
+  // Билдирүү тутумун активдештирүү
   await NotificationService().initNotification();
 
-  // Топторду сактоо үчүн Hive кутучасын ачабыз
+  // Hive кутучаларын ачуу
   await Hive.openBox('groups_box');
   await Hive.openBox('billbuddy_box');
 
   runApp(
+    // Провайдерлер менен Блоктор бириктирилди
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+        
+        // AuthBloc глобалдык даракка кайтарылды
+        BlocProvider<AuthBloc>(create: (_) => AuthBloc()), 
       ],
       child: const BillBuddyApp(),
     ),

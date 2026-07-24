@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart'; 
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../logic/providers/expense_provider.dart';
 import '../logic/providers/language_provider.dart';
+import '../logic/providers/supabase_provider.dart';
 import 'calendar_screen.dart';
-import 'account_screen.dart'; 
-import 'groups_screen.dart'; 
-import 'group_payment_screen.dart'; 
+import 'account_screen.dart';
+import 'group_payment_screen.dart';
+import 'add_expense_screen.dart'; // 🌟 ЖАҢЫ КОШУЛДУ: Жаңы барактын импорту
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,20 +19,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final String _boxName = 'billbuddy_box';
-  final String _userNameKey = 'user_name_key';
-  String _userName = 'Диана'; 
-
   @override
   void initState() {
     super.initState();
-    _loadUserName();
-  }
-
-  void _loadUserName() async {
-    var box = await Hive.openBox(_boxName);
-    setState(() {
-      _userName = box.get(_userNameKey, defaultValue: 'Диана');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseProvider>().fetchProfile();
     });
   }
 
@@ -39,10 +31,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
-    String helloPrefix = langProvider.translate('hello') ;
+    final userName = supabaseProvider.userName;
+
+    String helloPrefix = langProvider.translate('hello');
     if (helloPrefix.contains(',')) {
-      helloPrefix = helloPrefix.split(',')[0]; 
+      helloPrefix = helloPrefix.split(',')[0];
     }
     helloPrefix = helloPrefix.replaceAll('[', '').replaceAll(']', '').trim();
 
@@ -60,14 +55,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () async {
-                      await Navigator.push(
+                    onTap: () {
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const AccountScreen(),
                         ),
                       );
-                      _loadUserName(); 
                     },
                     child: const CircleAvatar(
                       radius: 20,
@@ -77,7 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    '$helloPrefix, $_userName!',
+                    '$helloPrefix, $userName!',
                     style: const TextStyle(
                       color: AppColors.textWhite,
                       fontSize: 16,
@@ -132,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 30),
 
-              // --- TOTAL BALANCE CARD ---
+              // --- TOTAL BALANCE CARD (Жалпы баланс) ---
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -165,20 +159,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-                            // --- АКТИВДҮҮ ТОПТОРДУН БАСКЫЧЫ ЖАНА ТЕКСТИ ---
+
+              // --- АКТИВДҮҮ ТОПТОРДУН БАСКЫЧЫ ЖАНА ТЕКСТИ ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       const Icon(
-                        Icons.account_balance_wallet_rounded, 
-                        color: AppColors.primary, 
+                        Icons.account_balance_wallet_rounded,
+                        color: AppColors.primary,
                         size: 22,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        langProvider.translate('my_expenses'), 
+                        langProvider.translate('my_expenses'),
                         style: const TextStyle(
                           color: AppColors.textWhite,
                           fontSize: 18,
@@ -187,35 +182,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const GroupsScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.add_circle_outline_rounded,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                    label: Text(
-                      langProvider.translate('create_new_group'),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+
                 ],
               ),
               const SizedBox(height: 10),
-
-              // --- ЧЫГАШАЛАРДЫН ЖАНДУУ ТИЗМЕСИ ---
+              // --- СЕРВЕРДЕН (SUPABASE) КЕЛГЕН ГРУППАЛАРДЫН ЖАНДУУ ТИЗМЕСИ ---
               Expanded(
                 child: ValueListenableBuilder(
                   valueListenable: Hive.box('groups_box').listenable(),
@@ -242,30 +213,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         final groupName = group['name'] as String;
                         final rawType = group['type'] as String;
 
-                        // 🌟 ОҢДОЛДУ: Базадагы типти азыркы тилге жараша динамикалык которуу
-                        String displayType = langProvider.translate('type_other');
-                        if (rawType == 'Жильё' || rawType == 'Үй-жай' || rawType == 'Housing') {
-                          displayType = langProvider.translate('type_housing') ;
-                        } else if (rawType == 'Кафе/Праздник' || rawType == 'Кафе/Майрам' || rawType == 'Cafe/Party') {
+                        String displayType = langProvider.translate(
+                          'type_other',
+                        );
+                        if (rawType == 'Жильё' ||
+                            rawType == 'Үй-жай' ||
+                            rawType == 'Housing') {
+                          displayType = langProvider.translate('type_housing');
+                        } else if (rawType == 'Кафе/Праздник' ||
+                            rawType == 'Кафе/Майрам' ||
+                            rawType == 'Cafe/Party') {
                           displayType = langProvider.translate('type_cafe');
-                        } else if (rawType == 'Поездки' || rawType == 'Сапарлар' || rawType == 'Travel') {
+                        } else if (rawType == 'Поездки' ||
+                            rawType == 'Сапарлар' ||
+                            rawType == 'Travel') {
                           displayType = langProvider.translate('type_travel');
                         }
 
                         IconData groupIcon = Icons.more_horiz_rounded;
-                        if (rawType == 'Жильё' || rawType == 'Үй-жай' || rawType == 'Housing') groupIcon = Icons.home_work_rounded;
-                        if (rawType == 'Кафе/Праздник' || rawType == 'Кафе/Майрам' || rawType == 'Cafe/Party') groupIcon = Icons.local_pizza_rounded;
-                        if (rawType == 'Поездки' || rawType == 'Сапарлар' || rawType == 'Travel') groupIcon = Icons.directions_car_rounded;
+                        if (rawType == 'Жильё' ||
+                            rawType == 'Үй-жай' ||
+                            rawType == 'Housing') {
+                          groupIcon = Icons.home_work_rounded;
+                        }
+                        if (rawType == 'Кафе/Праздник' ||
+                            rawType == 'Кафе/Майрам' ||
+                            rawType == 'Cafe/Party') {
+                          groupIcon = Icons.local_pizza_rounded;
+                        }
+                        if (rawType == 'Поездки' ||
+                            rawType == 'Сапарлар' ||
+                            rawType == 'Travel') {
+                          groupIcon = Icons.directions_car_rounded;
+                        }
 
                         double groupTotalAmount = 0.0;
                         try {
                           final mainBox = Hive.box('billbuddy_box');
-                          final List<dynamic>? savedRaw = mainBox.get('expenses_list_raw');
+                          final List<dynamic>? savedRaw = mainBox.get(
+                            'expenses_list_raw',
+                          );
                           if (savedRaw != null) {
                             for (var item in savedRaw) {
                               final expense = item as Map;
                               final title = (expense['title'] ?? '') as String;
-                              final amount = (expense['amount'] ?? 0.0) as double;
+                              final amount =
+                                  (expense['amount'] ?? 0.0) as double;
 
                               if (title.contains(groupName)) {
                                 groupTotalAmount += amount;
@@ -277,7 +270,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         }
 
                         return Dismissible(
-                          key: Key(group['createdAt'] ?? actualIndex.toString()),
+                          key: Key(
+                            group['createdAt'] ?? actualIndex.toString(),
+                          ),
                           direction: DismissDirection.endToStart,
                           background: Container(
                             margin: const EdgeInsets.only(bottom: 12.0),
@@ -287,7 +282,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             alignment: Alignment.centerRight,
-                            child: const Icon(Icons.delete, color: Colors.white),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
                           ),
                           onDismissed: (direction) {
                             box.deleteAt(actualIndex);
@@ -309,7 +307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     groupIndex: actualIndex,
                                   ),
                                 ),
-                              ).then((_) => setState(() {})); 
+                              ).then((_) => setState(() {}));
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
@@ -330,14 +328,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                       child: imagePath.isNotEmpty
                                           ? ClipRRect(
-                                              borderRadius: BorderRadius.circular(10),
-                                              child: Image.file(File(imagePath), fit: BoxFit.cover),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              child: Image.file(
+                                                File(imagePath),
+                                                fit: BoxFit.cover,
+                                              ),
                                             )
-                                          : Icon(groupIcon, color: AppColors.primary),
-                                  ),
+                                          : Icon(
+                                              groupIcon,
+                                              color: AppColors.primary,
+                                            ),
+                                    ),
                                     const SizedBox(width: 15),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           groupName,
@@ -348,14 +354,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        // 🌟 ОҢДОЛДУ: Эми бул жерде "Тип: Сапарлар" эмес, англисчеде "Type: Travel" деп туура чыгат!
                                         Text(
                                           '${langProvider.translate('group_direction_label')}: $displayType',
                                           style: const TextStyle(
                                             color: AppColors.textGray,
                                             fontSize: 12,
-                                            ),),],),const Spacer(),Text('\$${groupTotalAmount.toStringAsFixed(2)}',
-                                            style: const TextStyle(color: AppColors.textWhite,
-                                            fontSize: 15,fontWeight: FontWeight.bold,
-                                            ),),],),),),),);},);},),),],),),),);}}
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      '\$${groupTotalAmount.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        color: AppColors.textWhite,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
 
+      // Жашыл плюс баскычы эми эски диалогду эмес, жаңы таза баракчаны коопсуз ачат!
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
+          ).then((_) => setState(() {}));
+        },
+        child: const Icon(Icons.add, color: AppColors.background, size: 28),
+      ),
+    );
+  }
+}

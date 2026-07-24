@@ -111,7 +111,7 @@ class AnalyticsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                                // 💳 ЖАЛПЫ АЙЛЫК ЧЫГАША КАРТАСЫ
+                                // ЖАЛПЫ АЙЛЫК ЧЫГАША КАРТАСЫ
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
