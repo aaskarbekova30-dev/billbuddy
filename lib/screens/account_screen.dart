@@ -91,19 +91,23 @@ class _AccountScreenState extends State<AccountScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
-        title: Text(
-          langProvider.translate('account_title'),
-          style: const TextStyle(
-            color: AppColors.textWhite,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
+     appBar: AppBar(
+  backgroundColor: AppColors.background,
+  elevation: 0,
+  iconTheme: const IconThemeData(color: AppColors.textWhite),
+  title: Text(
+    // 🛠️ ОҢДОЛДУ: Тил орусча болгондо сөз автоматтык түрдө "Аккаунт" деп чыгат
+    langProvider.currentLang == 'ru' 
+        ? 'Аккаунт' 
+        : (langProvider.currentLang == 'en' ? 'Account' : 'Аккаунт'),
+    style: const TextStyle(
+      color: AppColors.textWhite,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  centerTitle: true,
+),
+
       body: supabaseProvider.isLoading 
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Padding(

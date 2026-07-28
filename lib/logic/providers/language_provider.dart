@@ -39,7 +39,7 @@ class LanguageProvider with ChangeNotifier {
     }
   }
 
-  // 🌟 ЖАҢЫЛАНДЫ: Экранга сөздөрдү тандалган тилде кайтаруучу негизги функция
+  // Экранга сөздөрдү тандалган тилде кайтаруучу негизги функция
   String translate(String key) {
     switch (_currentLang) {
       case 'ru':

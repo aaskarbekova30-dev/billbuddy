@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar/table_calendar.dart'; // Календарь пакети кошулду
 import '../constants/app_colors.dart';
 import '../logic/providers/expense_provider.dart';
 import '../logic/providers/language_provider.dart';
@@ -15,7 +15,8 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  // Календардын форматы үчүн өзгөрмө калыбына келтирилди
+  CalendarFormat _calendarFormat = CalendarFormat.month; 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
@@ -45,11 +46,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
     return events;
   }
-
-  @override
+    @override
   Widget build(BuildContext context) {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
+    
+    // Тилди аныктоочу тутум
+    final currentLang = langProvider.currentLang;
 
     final subs = expenseProvider.subscriptions;
     final expenses = expenseProvider.expenses;
@@ -79,16 +82,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: Column(
         children: [
+          // Скриншоттогудай жасалгаланган Календарь
           Container(
             margin: const EdgeInsets.all(15),
+            padding: const EdgeInsets.only(bottom: 15),
             decoration: BoxDecoration(
               color: AppColors.cardBg,
               borderRadius: BorderRadius.circular(20),
             ),
             child: TableCalendar(
-              locale: langProvider.currentLang == 'ky'
+              // Тил асинхрондуу өзгөрүшү үчүн маанилүү ачкыч (key)
+              key: ValueKey(currentLang),
+              locale: currentLang == 'ky'
                   ? 'ky_KG'
-                  : (langProvider.currentLang == 'ru' ? 'ru_RU' : 'en_US'),
+                  : (currentLang == 'ru' ? 'ru_RU' : 'en_US'),
+              
+              // Жогорку панелдеги баскычты локализациялоо ("неделя" / "жума" маселесин чечет)
+              availableCalendarFormats: {
+                CalendarFormat.month: langProvider.translate('calendar_format_month'),
+                CalendarFormat.twoWeeks: langProvider.translate('calendar_format_2_weeks'),
+                CalendarFormat.week: langProvider.translate('calendar_format_week'),
+              },
+              
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
@@ -110,55 +125,71 @@ class _CalendarScreenState extends State<CalendarScreen> {
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
               },
+
+              // Апта күндөрүнүн стили (скриншоттогудай боз жана кызыл)
+              daysOfWeekStyle: const DaysOfWeekStyle(
+                weekdayStyle: TextStyle(color: Color(0xFF5F6E86), fontSize: 13),
+                weekendStyle: TextStyle(color: Colors.redAccent, fontSize: 13),
+              ),
+              
+              // Күндөрдүн жасалгасы (Жашыл тегерек жана астындагы сары чекиттер)
               calendarStyle: const CalendarStyle(
                 defaultTextStyle: TextStyle(color: AppColors.textWhite),
                 weekendTextStyle: TextStyle(color: Colors.redAccent),
                 outsideDaysVisible: false,
+                
                 todayDecoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: Colors.transparent,
                   shape: BoxShape.circle,
                 ),
+                todayTextStyle: TextStyle(color: AppColors.textWhite),
+
+                // Скриншоттогудай ачык жашыл тандалган күн (мисалы: 24)
                 selectedDecoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Color(0xFF00E676), 
                   shape: BoxShape.circle,
                 ),
+                selectedTextStyle: TextStyle(
+                  color: Color(0xFF0F1B2B), 
+                  fontWeight: FontWeight.bold,
+                ),
+
+                markersAlignment: Alignment.bottomCenter,
+                markerSize: 6,
                 markerDecoration: BoxDecoration(
-                  color: Color(0xFFFFCA28),
+                  color: Color(0xFFFFCA28), // Астындагы сары чекиттер
                   shape: BoxShape.circle,
                 ),
               ),
-              headerStyle: const HeaderStyle(
+
+              // Жогорку панелдин дизайны (Жашыл формат баскычы)
+              headerStyle: HeaderStyle(
                 formatButtonVisible: true,
                 titleCentered: true,
-                titleTextStyle: TextStyle(
+                titleTextStyle: const TextStyle(
                   color: AppColors.textWhite,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
-                formatButtonTextStyle: TextStyle(
-                  color: AppColors.background,
+                formatButtonTextStyle: const TextStyle(
+                  color: Color(0xFF0F1B2B), 
                   fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
-                formatButtonDecoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                formatButtonDecoration: const BoxDecoration(
+                  color: Color(0xFF00E676), // Жашыл баскыч
+                  borderRadius: BorderRadius.all(Radius.circular(20.0)),
                 ),
-                leftChevronIcon: Icon(
-                  Icons.chevron_left,
-                  color: AppColors.textWhite,
-                ),
-                rightChevronIcon: Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textWhite,
-                ),
+                formatButtonPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                leftChevronIcon: const Icon(Icons.chevron_left, color: AppColors.textWhite),
+                rightChevronIcon: const Icon(Icons.chevron_right, color: AppColors.textWhite),
               ),
               eventLoader: (day) {
                 return _getEventsForDay(day, subs, expenses);
               },
             ),
           ),
-
-          const SizedBox(height: 10),
+                    const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
@@ -176,6 +207,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           const SizedBox(height: 10),
 
+          // Төмөнкү тизме (Жазылуулар жана чыгашалар)
           Expanded(
             child: selectedEvents.isEmpty
                 ? Center(
@@ -242,9 +274,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      langProvider.translate(
-                                        'monthly_sub_label',
-                                      ),
+                                      langProvider.translate('monthly_sub_label'),
                                       style: const TextStyle(
                                         color: AppColors.textGray,
                                         fontSize: 12,
@@ -330,3 +360,5 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 }
+
+

@@ -108,7 +108,7 @@ class SupabaseProvider with ChangeNotifier {
   }
 
   // 3. МУЗКАЛЫК ФУНКЦИЯ: ЖАҢЫ ТОПТУ СЕРВЕРГЕ ЖӨНӨТҮҮ (INSERT)
-  // 🛠️ СУПАБЕЙС ОҢДОЛДУ: Базадагы 'image_path' устунуна туураланды
+  // Базадагы 'image_path' устунуна туураланды
   Future<void> addGroup({
     required String name,
     required String type,
@@ -125,8 +125,8 @@ class SupabaseProvider with ChangeNotifier {
     }
   }
 
-  // 4. МУЗКАЛЫК ФУНКЦИЯ: ЖАҢЫ ЧЫГАШАНЫ СЕРВЕРГЕ ЖӨНӨТҮҮ (INSERT)
-  // 🛠️ СУПАБЕЙС ОҢДОЛДУ: Базадагы 'group_name' устунуна туураланды
+  // ЖАҢЫ ЧЫГАШАНЫ СЕРВЕРГЕ ЖӨНӨТҮҮ (INSERT)
+  // Базадагы 'group_name' устунуна туураланды
   Future<void> addExpense({
     required String title,
     required double amount,
