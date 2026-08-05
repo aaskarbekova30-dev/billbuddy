@@ -62,6 +62,10 @@ class AppStrings {
     'no_events_empty_hint': 'Бул күнү пландалган төлөмдөр же\nчыгашалар катталган эмес',
     'monthly_sub_label': 'Айлык абонемент',
     'expense_label': 'Чыгаша',
+        'expense_title_hint': 'Чыгашанын аталышы',
+    'amount_hint': 'Суммасы',
+    'add': 'Кошуу',
+
   };
 
   // 2. Орус тили

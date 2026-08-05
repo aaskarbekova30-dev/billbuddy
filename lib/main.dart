@@ -1,4 +1,3 @@
-import 'package:billbuddy/app_config.dart';
 import 'package:billbuddy/logic/providers/expense_provider.dart';
 import 'package:billbuddy/screens/auth_gate.dart';
 import 'package:flutter/material.dart';
@@ -20,11 +19,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   //  Supabase ишке киргизүү
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    // ignore: deprecated_member_use
-    anonKey: AppConfig.supabaseAnonKey,
-  );
+  //  ТУУРА ВАРИАНТ (Чыныгы шилтемелер тырмакчада)
+await Supabase.initialize(
+  url: 'https://iswtuketohftclhmncyi.supabase.co', // Сиздин чыныгы URL дарегиңиз
+  // ignore: deprecated_member_use
+  anonKey: 'sb_publishable_CqCzKytkrPQyKlWlhhe-gA_RIIi1XGG', // Жаңы көчүрүп келген узун ачкычыңыз
+);
+
+
 
   // Hive базасын ишке киргизүү
   await Hive.initFlutter();
