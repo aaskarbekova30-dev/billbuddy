@@ -198,7 +198,7 @@ class _HubSettlementViewState extends State<HubSettlementView> {
   child: currentExpenses.isEmpty
       ? Center(
           child: Text(
-            // 🛠️ АСИНХРОНДУУ КОТОРМО: Текст AppStrings файлынан таза окулат
+            // Текст AppStrings файлынан таза окулат
             translations['no_expenses_message'] ?? 'Чыгашалар азырынча жок',
             style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
           ),
@@ -215,7 +215,7 @@ class _HubSettlementViewState extends State<HubSettlementView> {
                 final String desc = expense['description'] ?? 'Чыгаша';
                 final double amt = (expense['amount'] ?? 0.0).toDouble();
 
-                // 🛠️ ВАЛЮТА КОНВЕРТАЦИЯСЫ: Доллар суммасын тандалган валютага айлантуу
+                // Доллар суммасын тандалган валютага айлантуу
                 final double displayAmt = currencyState.convertFromUsd(amt);
 
                 return Container(
