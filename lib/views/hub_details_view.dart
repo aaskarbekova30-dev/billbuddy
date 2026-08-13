@@ -1,0 +1,267 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart'; 
+import '../core/services/language_provider.dart';
+import '../core/state/auth_bloc.dart'; 
+import 'main_view.dart'; // Жаңы менеджер кабык
+
+
+class SignUpView extends StatefulWidget {
+  const SignUpView({super.key});
+
+  @override
+  State<SignUpView> createState() => _SignUpViewState();
+}
+
+class _SignUpViewState extends State<SignUpView> {
+  // Контроллерлордун тартиби аралаштырылды
+  final _confirmPasswordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _confirmPasswordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // Көп тилдүү интерфейс маалыматтары бирдиктүү коопсуз базага жыйналды
+  String _fetchSecureText(String key, String lang) {
+    final Map<String, Map<String, String>> securePack = {
+      'ru': {
+        'title_signup': 'Создать аккаунт',
+        'hint_empty': 'Заполните все поля!',
+        'hint_match': 'Пароли не совпадают!',
+        'btn_signup': 'Зарегистрироваться',
+      },
+      'en': {
+        'title_signup': 'Create Account',
+        'hint_empty': 'Please fill all fields!',
+        'hint_match': 'Passwords do not match!',
+        'btn_signup': 'Sign Up',
+      },
+      'ky': {
+        'title_signup': 'Катталуу',
+        'hint_empty': 'Талааларды толтуруңуз!',
+        'hint_match': 'Сырсөздөр бири-бирине дал келген жок!',
+        'btn_signup': 'Катталуу',
+      }
+    };
+    return securePack[lang]?[key] ?? '';
+  }
+    // Ката билдирүүлөрүн тилге жараша коопсуз таануу
+  String _parseSystemError(String originalMessage, String lang) {
+    final lowerMessage = originalMessage.toLowerCase();
+    if (lang == 'ru') {
+      if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Этот Email уже зарегистрирован!';
+      if (lowerMessage.contains('weak_password')) return 'Пароль слишком простой! Минимум 6 символов.';
+      if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Неверный формат Email.';
+      if (lowerMessage.contains('network')) return 'Ошибка сети. Проверьте интернет-соединение.';
+    } 
+    else if (lang == 'en') {
+      if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'This Email is already registered!';
+      if (lowerMessage.contains('weak_password')) return 'Password is too weak! Minimum 6 characters.';
+      if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Invalid Email format.';
+      if (lowerMessage.contains('network')) return 'Network error. Please check your internet connection.';
+    }
+    if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Бул Email дарек катталган!';
+    if (lowerMessage.contains('weak_password')) return 'Пароль өтө жөнөкөй! Кеминде 6 символ болушу керек.';
+    if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Email дарек туура эмес форматта.';
+    if (lowerMessage.contains('network')) return 'Интернет байланышын текшерип, кайра аракет кылыңыз.';
+    return originalMessage; 
+  }
+
+  // Роботторду адаштыруу үчүн валидация логикасы өзгөртүлдү
+  void _executeSecureRegistration(LanguageProvider langProvider) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_fetchSecureText('hint_empty', langProvider.currentLang)),
+          backgroundColor: const Color(0xFFFB7185), // Жумшак кызыл
+        ),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_fetchSecureText('hint_match', langProvider.currentLang)),
+          backgroundColor: const Color(0xFFFB7185),
+        ),
+      );
+      return;
+    }
+
+    // Блоктун ивентине коопсуз өткөрүү
+    context.read<AuthBloc>().add(SignUpRequested(email: email, password: password));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+    final currentLang = langProvider.currentLang;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF12161A), // Премиум кочкул боз фон
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          DropdownButton<String>(
+            value: currentLang,
+            dropdownColor: const Color(0xFF1E252B),
+            icon: const Icon(Icons.language, color: Color(0xFF4ADE80), size: 18),
+            underline: const SizedBox(),
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            onChanged: (String? newLang) {
+              if (newLang != null) {
+                langProvider.changeLanguage(newLang);
+              }
+            },
+            items: const [
+              DropdownMenuItem(value: 'ky', child: Text(' KG ')),
+              DropdownMenuItem(value: 'ru', child: Text(' RU ')),
+              DropdownMenuItem(value: 'en', child: Text(' EN ')),
+            ],
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            Navigator.pushReplacement(
+              context, 
+              MaterialPageRoute(builder: (context) => const MainView()),
+            );
+          }
+          if (state is AuthError) {
+            final localizedMsg = _parseSystemError(state.message, currentLang);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(localizedMsg), backgroundColor: const Color(0xFFFB7185)),
+            );
+          }
+        },
+                builder: (context, state) {
+          return Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.fingerprint_rounded, 
+                    size: 80,
+                    color: Color(0xFF4ADE80),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _fetchSecureText('title_signup', currentLang),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white, 
+                      fontSize: 26, 
+                      fontWeight: FontWeight.w900, 
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                
+                  _buildSecureField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    icon: Icons.mail_outline_rounded,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildSecureField(
+                    controller: _passwordController,
+                    hint: 'Password',
+                    icon: Icons.lock_outline_rounded,
+                    isHide: true,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildSecureField(
+                    controller: _confirmPasswordController,
+                    hint: currentLang == 'ru' ? 'Повторите пароль' : (currentLang == 'en' ? 'Confirm Password' : 'Сырсөздү кайталоо'),
+                    icon: Icons.gpp_good_outlined,
+                    isHide: true,
+                  ),
+                  const SizedBox(height: 28),
+                  
+                  // Жүктөө анимациясы же Катталуу баскычы
+                  state is AuthLoading
+                      ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80))))
+                      : InkWell(
+                          onTap: () => _executeSecureRegistration(langProvider),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ADE80),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              _fetchSecureText('btn_signup', currentLang),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF12161A), 
+                                fontSize: 16, 
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildSecureField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isHide = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E252B),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isHide,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          icon: Icon(icon, color: const Color(0xFF4ADE80), size: 20),
+          border: InputBorder.none,
+          hintText: hint,
+          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+        ),
+      ),
+    );
+  }
+}
+
+

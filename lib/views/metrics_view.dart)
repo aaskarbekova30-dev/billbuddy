@@ -1,0 +1,217 @@
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+import '../core/services/language_provider.dart'; // Долбооруңуздагы туура дареги
+
+class MetricsView extends StatelessWidget {
+  const MetricsView({super.key});
+
+  IconData _getIconForType(String type) {
+    if (type == 'Жильё' || type == 'Үй-жай' || type == 'Housing') return Icons.home_work_rounded;
+    if (type == 'Кафе/Праздник' || type == 'Кафе/Майрам' || type == 'Cafe/Party') return Icons.local_pizza_rounded;
+    if (type == 'Поездки' || type == 'Сапарлар' || type == 'Travel') return Icons.directions_car_rounded;
+    return Icons.grid_view_rounded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF12161A), // Жаңы премиум фон
+      body: SafeArea(
+        child: ValueListenableBuilder(
+          valueListenable: Hive.box('groups_box').listenable(),
+          builder: (context, Box box, _) {
+            if (box.isEmpty) {
+              return Center(
+                child: Text(
+                  langProvider.translate('analytics_empty_hint') ?? 'Нет данных',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                ),
+              );
+            }
+
+            double totalAllExpenses = 0.0;
+            String tHousing = langProvider.translate('type_housing') ?? 'Жильё';
+            String tCafe = langProvider.translate('type_cafe') ?? 'Кафе/Праздник';
+            String tTravel = langProvider.translate('type_travel') ?? 'Поездки';
+            String tOther = langProvider.translate('type_other') ?? 'Другое';
+
+            Map<String, double> categorySums = {
+              tHousing: 0.0,
+              tCafe: 0.0,
+              tTravel: 0.0,
+              tOther: 0.0,
+            };
+
+            Box? mainBox;
+            try {
+              mainBox = Hive.box('billbuddy_box');
+            } catch (e) {
+              mainBox = null; 
+            }
+            
+            if (mainBox != null) {
+              final List<dynamic>? savedRaw = mainBox.get('expenses_list_raw');
+              if (savedRaw != null) {
+                for (var item in savedRaw) {
+                  final expense = item as Map;
+                  final amount = (expense['amount'] ?? 0.0) as double;
+                  final title = (expense['title'] ?? '') as String;
+                  
+                  totalAllExpenses += amount;
+                  String detectedType = tOther;
+
+                  for (var g in box.values) {
+                    final groupMap = g as Map;
+                    final gName = groupMap['name'] as String;
+                    if (title.contains(gName)) {
+                      final gType = groupMap['type'] as String;
+                      if (gType == 'Жильё' || gType == 'Үй-жай' || gType == 'Housing') {
+                        detectedType = tHousing;
+                      } else if (gType == 'Кафе/Праздник' || gType == 'Кафе/Майрам' || gType == 'Cafe/Party') {
+                        detectedType = tCafe;
+                      } else if (gType == 'Поездки' || gType == 'Сапарлар' || gType == 'Travel') {
+                        detectedType = tTravel;
+                      }
+                      break;
+                    }
+                  }
+                  categorySums[detectedType] = (categorySums[detectedType] ?? 0.0) + amount;
+                }
+              }
+            }
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. АТАЛЫШЫ
+                  Text(
+                    langProvider.translate('analytics_title') ?? 'Аналитика',
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 2. БОРБОРДУК ТЕГЕРЕК ДИАГРАММА (Жаңы уникалдуу макет)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E252B),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 130,
+                          height: 130,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: CircularProgressIndicator(
+                                  value: totalAllExpenses > 0 ? 0.75 : 0.0,
+                                  strokeWidth: 10,
+                                  backgroundColor: const Color(0xFF12161A),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    totalAllExpenses > 0 ? "75%" : "0%",
+                                    style: const TextStyle(color: Color(0xFF4ADE80), fontSize: 24, fontWeight: FontWeight.w900),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    langProvider.translate('monthly_total_label') ?? 'Всего',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          '\$${totalAllExpenses.toStringAsFixed(2)}',
+                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  Text(
+                    langProvider.translate('category_analytics_title') ?? 'Категории',
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 3. ДИНАМИКАЛЫК КАТЕГОРИЯЛАРДЫН ТИЗМЕСИ
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E252B),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      children: categorySums.keys.map((category) {
+                        final amount = categorySums[category] ?? 0.0;
+                        final percentage = totalAllExpenses > 0 ? (amount / totalAllExpenses) : 0.0;
+
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF12161A),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(_getIconForType(category), color: const Color(0xFF4ADE80), size: 18),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              category,
+                                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                                            ),
+                                            Text(
+                                              '\$${amount.toStringAsFixed(2)}',
+                                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        ClipRRect(
+                                            borderRadius: BorderRadius.circular(3),
+                                            child: LinearProgressIndicator(value: percentage,
+                                            backgroundColor: const Color(0xFF12161A),
+                                            valueColor: const AlwaysStoppedAnimation(
+                                                Color(0xFF4ADE80)),minHeight: 4,
+                                                ),),],),),],),),
+                                                if (category != categorySums.keys.last)const 
+                                                Padding(padding: EdgeInsets.symmetric(horizontal: 20),
+                                                child: Divider(color: Color(0xFF12161A), 
+                                                height: 1),),],);}).toList(),),),],),);},),),);}}
+
+

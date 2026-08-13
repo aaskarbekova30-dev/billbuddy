@@ -14,12 +14,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.demal.app.service"
+    // ЖАҢЫЛОО: Пакеттин атын дал келтирдик (Мурун com.demal.app.service болчу)
+    namespace = "com.appitcompany.billbuddy"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
+        // ЖАҢЫЛОО: Билдирүү пакетин өчүргөнүбүз үчүн desugaring өчүрүлдү
+        isCoreLibraryDesugaringEnabled = false
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -44,7 +46,6 @@ android {
 
     buildTypes {
         release {
-            // Бул жерде эски "debug" дегенди өчүрүп, "release" ачкычын койдук
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -60,6 +61,6 @@ flutter {
     source = "../.."
 }
 
+// ЖАҢЫЛОО: Блок туура жабылып, бош dependencies кошулду
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
