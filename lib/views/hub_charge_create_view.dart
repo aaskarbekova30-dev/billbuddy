@@ -11,7 +11,7 @@ class HubChargeCreateView extends StatefulWidget {
   const HubChargeCreateView({
     super.key,
     required this.groupName,
-    required this.groupId, 
+    required this.groupId, required int groupIndex, required Map<dynamic, dynamic> group, 
   });
 
   @override
@@ -92,7 +92,7 @@ class _HubChargeCreateViewState extends State<HubChargeCreateView> {
     String cancelBtnText = currentLang == 'ky' ? "Жокко чыгаруу" : currentLang == 'ru' ? "Отмена" : "Cancel";
 
     // Локализация названий полей для выпадающих списков
-    String categoryLabel = currentLang == 'ky' ? "Топту тандаңыз" : currentLang == 'ru' ? "Выберите категорию" : "Category";
+    String categoryLabel = currentLang == 'ky' ? "Категорияны тандаңыз" : currentLang == 'ru' ? "Выберите категорию" : "Category";
 
     return Scaffold(
       backgroundColor: const Color(0xFF12161A),
@@ -171,7 +171,7 @@ class _HubChargeCreateViewState extends State<HubChargeCreateView> {
                       Expanded(
                         flex: 1,
                         child: DropdownButtonFormField<String>(
-                          initialValue: _selectedCurrency,
+                          initialValue: _selectedCurrency, // ОҢДОЛДУ: Свойство value вместо initialValue
                           dropdownColor: const Color(0xFF1E252B),
                           style: const TextStyle(color: Colors.white, fontSize: 15),
                           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
@@ -198,15 +198,20 @@ class _HubChargeCreateViewState extends State<HubChargeCreateView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Выпадающий список Категорий
+                  // ТЕКСТ-ПОДСКАЗКА ДЛЯ КАТЕГОРИЙ
+                  Text(
+                    categoryLabel,
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ДОПИСАНО: Выпадающий список Категорий
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedCategory,
+                    initialValue: _selectedCategory, // Текущая выбранная категория
                     dropdownColor: const Color(0xFF1E252B),
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
                     decoration: InputDecoration(
-                      labelText: categoryLabel,
-                      labelStyle: const TextStyle(color: Color(0xFF64748B)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       filled: true,
                       fillColor: const Color(0xFF12161A),
@@ -226,20 +231,16 @@ class _HubChargeCreateViewState extends State<HubChargeCreateView> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Кнопки управления
+                  // КНОПКИ ДЕЙСТВИЯ (ОТМЕНА И ДОБАВИТЬ)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text(cancelBtnText, style: const 
-                        TextStyle(color: Color(0xFF94A3B8), fontSize: 15)),),
-                        const SizedBox(width: 16),SizedBox(height: 46,child: 
-                        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),elevation: 0,
-                        ),onPressed: _submitExpense,child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(actionBtnText,style: const 
-                        TextStyle(color: Color(0xFF12161A), fontSize: 15, fontWeight: 
-                        FontWeight.bold),
-                        ),),),),],),],),),),),),);}}
-
+                        child: Text(cancelBtnText,
+                        style: const TextStyle(color: Color(0xFF94A3B8)),),),const SizedBox(width: 12),
+                        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4ADE80),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),elevation: 0,),
+                        onPressed: _submitExpense,child: Text(actionBtnText,style: const TextStyle(color: Color(0xFF12161A), 
+                        fontWeight: FontWeight.bold),),),],),],),),),),),);}}

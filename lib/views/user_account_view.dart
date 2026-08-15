@@ -101,7 +101,7 @@ class _UserAccountViewState extends State<UserAccountView> {
     }
   }
 
-  // Валютаны түз эле Supabase базасына сактоо
+    // Валютаны түз эле Supabase базасына сактоо
   Future<void> _updateCurrency(String newCurrency) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
@@ -118,10 +118,23 @@ class _UserAccountViewState extends State<UserAccountView> {
       });
 
       if (mounted) {
+        // 1. Учурдагы тандалган тилдин кодун LanguageProvider'ден алабыз ('ru', 'en' же 'ky')
+        String currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLang; 
+
+        // 2. AppStrings сөздүгүңүздөн ошол тилге тиешелүү котормолорду тартабыз
+        final translations = AppStrings.getTranslation(currentLang);
+
+        // Эски билдирүүлөр экранда топтолуп калбашы үчүн аларды тазалайбыз
+        ScaffoldMessenger.of(context).clearSnackBars();
+
+        // 3. Билдирүүнү динамикалык түрдө тандалган тилде чыгарабыз
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Валюта ийгиликтүү алмаштырылды!'),
-            backgroundColor: Color(0xFF4ADE80),
+          SnackBar(
+            content: Text(
+              translations['currency_changed_success'] ?? 'Валюта успешно изменена!',
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: const Color(0xFF4ADE80), // Жашыл түс
           ),
         );
       }
@@ -135,6 +148,7 @@ class _UserAccountViewState extends State<UserAccountView> {
       if (mounted) setState(() { _isLoading = false; });
     }
   }
+
 
   // Аккаунтту биротоло өчүрүү логикасы
   Future<void> _handleAccountDeletion(String enteredEmail) async {

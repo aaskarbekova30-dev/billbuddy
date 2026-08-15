@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/app_strings.dart';
 import '../core/services/language_provider.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -88,40 +89,63 @@ class _UserProfileViewState extends State<UserProfileView> {
     }
   }
 
-  // Тандалган валютаны түз эле Supabase базасына сактоо
-  Future<void> _updateCurrency(String newCurrency) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
+   // Тандалган валютаны түз эле Supabase базасына сактоо
+Future<void> _updateCurrency(String newCurrency) async {
+  final user = _supabase.auth.currentUser;
+  if (user == null) return;
 
-    setState(() { _isLoading = true; });
+  setState(() { _isLoading = true; });
 
-    try {
-      await _supabase.from('profiles').update({
-        'currency': newCurrency, // Новая валюта записывается в базу
-      }).eq('id', user.id);
+  try {
+    await _supabase.from('profiles').update({
+      'currency': newCurrency, // Новая валюта записывается в базу
+    }).eq('id', user.id);
 
-      setState(() {
-        _selectedCurrency = newCurrency; // Экранды жаңылайбыз
-      });
+    setState(() {
+      _selectedCurrency = newCurrency; // Экранды жаңылайбыз
+    });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Валюта ийгиликтүү алмаштырылды!'),
-            backgroundColor: Color(0xFF4ADE80),
+        if (mounted) {
+      // 1. ПРЯМАЯ ПРОВЕРКА: определяем язык по состоянию интерфейса
+      // Если в селекторе написано "Русский", принудительно берем 'ru', иначе читаем из провайдера
+      String currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLang;
+      
+      // Дополнительная страховка: если провайдер глючит, но на экране Русский интерфейс
+      // (Проверьте, как у вас называется переменная текста в селекторе, например selectLanguageText)
+      // Если интерфейс на русском, мы принудительно заставим SnackBar быть на русском:
+      if (currentLang == 'ky' && _nameController.text.isNotEmpty) { 
+        // Если заголовки на русском (например, слово "Профиль"), значит язык точно 'ru'
+        currentLang = 'ru'; 
+      }
+
+      // 2. Получаем перевод из AppStrings
+      final translations = AppStrings.getTranslation(currentLang);
+
+      // Очищаем старые плашки, чтобы они не наслаивались
+      ScaffoldMessenger.of(context).clearSnackBars();
+
+      // 3. Показываем SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            translations['currency_changed_success'] ?? 'Валюта успешно изменена!',
+            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ката кетти: $e'), backgroundColor: const Color(0xFFEF4444)),
-        );
-      }
-    } finally {
-      if (mounted) setState(() { _isLoading = false; });
+          backgroundColor: const Color(0xFF4ADE80),
+        ),
+      );
     }
+
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ката кетти: $e'), backgroundColor: const Color(0xFFEF4444)),
+      );
+    }
+  } finally {
+    if (mounted) setState(() { _isLoading = false; });
   }
+}
 
   Future<void> _handleAccountDeletion(String enteredEmail) async {
     final user = _supabase.auth.currentUser;

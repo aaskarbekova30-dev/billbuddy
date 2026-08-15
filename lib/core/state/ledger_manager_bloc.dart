@@ -10,7 +10,7 @@ class LedgerManagerBloc extends Bloc<LedgerManagerEvent, LedgerManagerState> {
 
   LedgerManagerBloc() : super(LedgerManagerInitial()) {
     
-    // 1. МААЛЫМАТТАРДЫ ЖҮКТӨӨ (КҮЧӨТҮЛГӨН ЖАНА КООПСУЗ)
+    // 1. ЧЫГЫМДАРДЫ, КАПЧЫКТАРДЫ ЖАНА АБОНЕМЕНТТЕРДИ БИР УБАКТА ЖҮКТӨӨ
     on<LoadExpenses>((event, emit) async {
       emit(LedgerManagerLoading());
       try {
@@ -23,6 +23,12 @@ class LedgerManagerBloc extends Bloc<LedgerManagerEvent, LedgerManagerState> {
             .from('expenses')
             .select('id, description, amount, group_id, created_at')
             .order('created_at', ascending: false);
+
+        // Таза subscriptions таблицасынан накты жазылууларды кошо жүктөйбүз
+        final List<dynamic> realSubscriptions = await _supabase
+            .from('subscriptions')
+            .select('*')
+            .order('date', ascending: true);
 
         final List<Map<String, dynamic>> combinedHubs = [];
 
@@ -37,104 +43,99 @@ class LedgerManagerBloc extends Bloc<LedgerManagerEvent, LedgerManagerState> {
             combinedHubs.add({
               'id': groupId,
               'name': (group['name'] ?? '') as String,
-              'category': (group['category'] ?? group['cat'] ?? 'Other') as String, 
-              'limit_amount': (group['limit_amount'] ?? group['limit'] ?? 0.0).toDouble(),  
+              'category': (group['category'] ?? 'Other') as String, 
+              'limit_amount': (group['limit_amount'] ?? 0.0).toDouble(),  
               'expenses': currentGroupExpenses,
             });
           }
         }
         
-        emit(LedgerManagerLoaded(combinedHubs)); 
+        // 🌟 ОҢДОЛДУ: Капчыктарды да, абонементтерди да бир убакта бир стейтке кошуп чыгарабыз!
+        emit(LedgerManagerLoaded(combinedHubs, realSubscriptions)); 
       } catch (e) {
-        // ИСПРАВЛЕНО: Просто выводим в консоль, не ломая запуск интерфейса
-        debugPrint('--- КАТА ТАК УШУЛ ЖЕРДЕ ---: $e');
-        emit(LedgerManagerLoaded(const [])); // Передаем пустой список, чтобы UI не зависал
+        debugPrint('Маалыматтарды жүктөөдө ката: $e');
+        emit(LedgerManagerLoaded(const [], const [])); 
       }
     });
 
-    // 2. КАПЧЫК ТҮЗҮҮ
+    // 2. ЖАҢЫ КАПЧЫК ТҮЗҮҮ ЛОГИКАСЫ
     on<CreateHubEvent>((event, emit) async {
       emit(LedgerManagerLoading());
       try {
+        final currentUser = _supabase.auth.currentUser;
+        if (currentUser == null) {
+          emit(LedgerManagerError('Ката: Колдонуучу катталган эмес!'));
+          return;
+        }
+
         await _supabase.from('groups').insert({
           'name': event.name,
           'category': event.category,
           'limit_amount': event.limitAmount,
         });
+        
+        add(LoadExpenses()); // Сакталгандан кийин баарын кайра жаңылоо
       } catch (e) {
         emit(LedgerManagerError('Жаңы капчык түзүүдө ката кетти: $e'));
-        return;
       }
-      emit(ExpenseAddedSuccess());
-      add(LoadExpenses()); 
     });
 
-    // 3. ЧЫГЫМ КОШУУ ЛОГИКАСЫ
+       // 3. ЧЫГЫМ КОШУУ (БАШКЫ БЕТКЕ ДАРОО ЧЫГА ТУРГАН КЫЛЫП КҮЧӨТҮЛДҮ)
     on<AddExpenseEvent>((event, emit) async {
       try {
         final currentUser = _supabase.auth.currentUser;
-        final String currentUserId = currentUser?.id ?? '';
+        if (currentUser == null) return;
 
-        if (currentUserId.isEmpty) {
-          emit(LedgerManagerError('Ката: Колдонуучу табылган жок!'));
-          return;
-        }
-
+        // "expenses" таблицасына жаңы чыгашаны коопсуз жазабыз
         await _supabase.from('expenses').insert({
           'description': event.title,
           'amount': event.amount,
           'group_id': event.groupId,
-          'payer_id': currentUserId,
+          'payer_id': currentUser.id,
         });
 
         add(LoadExpenses()); 
+        
       } catch (e) {
-        emit(LedgerManagerError('Чыгымды кошууда ката кетти: $e'));
+        emit(LedgerManagerError('Чыгым кошууда ката: $e'));
       }
     });
 
-    // 4. КАПЧЫКТЫ БИРОТОЛО ӨЧҮРҮҮ
+    // 4. КАПЧЫКТЫ ИЧИНДЕГИ ЧЫГЫМДАРЫ МЕНЕН БИРОТОЛО ӨЧҮРҮҮ
     on<SettleUpGroupEvent>((event, emit) async {
       emit(LedgerManagerLoading());
       try {
-        await _supabase
-            .from('expenses')
-            .delete()
-            .eq('group_id', event.groupId);
-
-        await _supabase
-            .from('groups')
-            .delete()
-            .eq('id', event.groupId);
+        await _supabase.from('expenses').delete().eq('group_id', event.groupId);
+        await _supabase.from('groups').delete().eq('id', event.groupId);
         
-        emit(ExpenseAddedSuccess()); 
         add(LoadExpenses()); 
       } catch (e) {
         emit(LedgerManagerError('Капчыкты өчүрүүдө ката кетти: $e'));
       }
     });
 
-    // 5. БИР ДААНА ЧЫГЫМДЫ ӨЧҮРҮҮ
-    on<DeleteExpenseEvent>((event, emit) async {
-      try {
-        await _supabase.from('expenses').delete().eq('id', event.id);
-        add(LoadExpenses()); 
-      } catch (e) {
-        emit(LedgerManagerError('Чыгышаны өчүрүүдө ката кетти: $e'));
-      }
+    // ==========================================================================
+    // АБОНЕМЕНТТЕРДИ САКТОО ЖАНА БАШКАРУУ ТУТУМУ (ЖАҢЫ ОҢДОЛГОН)
+    // ==========================================================================
+
+    // 5. АБОНЕМЕНТТЕРДИ ЖҮКТӨӨ СУРАМЫ КЕЛГЕНДЕ БАШКЫ ИВЕНТКЕ ЖӨНӨТӨБҮЗ
+    on<LoadSubscriptionsEvent>((event, emit) async {
+      // 🌟 ОҢДОЛДУ: Микро-перезагрузка циклин жаратпаш үчүн башкы жүктөөнү гана чакырабыз
+      add(LoadExpenses());
     });
 
-    // 6. БАРДЫК ЧЫГЫМДАРДЫ ТАЗАЛОО
-    on<ClearAllExpensesEvent>((event, emit) async {
-      emit(LedgerManagerLoading());
+    // 6. АБОНЕМЕНТТИ БИРОТОЛО ӨЧҮРҮҮ
+    on<DeleteSubscriptionEvent>((event, emit) async {
       try {
-        await _supabase.from('expenses').delete().neq('id', 0);
-        emit(ExpenseAddedSuccess()); 
-        add(LoadExpenses()); 
+        await _supabase
+            .from('subscriptions')
+            .delete()
+            .eq('id', event.id);
+        
+        add(LoadExpenses()); // Өчүрүлгөндөн кийин толук жаңылоо
       } catch (e) {
-        emit(LedgerManagerError('Бардык чыгымдарды тазалоодо ката кетти: $e'));
+        emit(LedgerManagerError('Абонементти өчүрүүдө ката кетти: $e'));
       }
     });
-
   } 
 }

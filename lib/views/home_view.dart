@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/app_strings.dart';
 import '../core/services/language_provider.dart';
 import '../core/state/ledger_manager_bloc.dart';
 
@@ -15,131 +12,74 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  String _userCurrency = 'RUB'; // Демейки валюта (По умолчанию Рубль)
-
   @override
   void initState() {
     super.initState();
     _refreshData();
-    _loadUserCurrency(); // Экран ачылганда профилдеги валютаны жүктөп келет
   }
 
+  // 🌟 Экран ачылганда базадан баардык маалыматтарды жаңылап жүктөйт
   void _refreshData() {
     context.read<LedgerManagerBloc>().add(LoadExpenses());
-  }
-
-  // Базадан колдонуучунун тандаган валютасын жүктөө
-  Future<void> _loadUserCurrency() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-    try {
-      final data = await Supabase.instance.client
-          .from('profiles')
-          .select('currency')
-          .eq('id', user.id)
-          .single();
-      if (data['currency'] != null) {
-        setState(() {
-          _userCurrency = data['currency'].toString().toUpperCase().trim();
-        });
-      }
-    } catch (e) {
-      debugPrint('Валютаны жүктөөдө ката: $e');
-    }
-  }
-
-  // Валюта кодуна карап тиешелүү символду кайтаруучу функция
-  String _getCurrencySymbol(String code) {
-    switch (code) {
-      case 'USD': return '\$';
-      case 'KGS': return 'с';
-      case 'EUR': return '€';
-      default: return '₽';
-    }
-  }
-
-  // ДАТАНЫ ФФОРМАТТООЧУ КАТАСЫЗ КООПСУЗ ФУНКЦИЯ
-  String _formatExpenseDate(String? createdAt, String lang) {
-    if (createdAt == null || createdAt.isEmpty) return '';
-    try {
-      final DateTime parsedDate = DateTime.parse(createdAt).toLocal();
-      final DateTime now = DateTime.now();
-      final DateTime today = DateTime(now.year, now.month, now.day);
-      final DateTime yesterday = today.subtract(const Duration(days: 1));
-      final DateTime expenseDay = DateTime(parsedDate.year, parsedDate.month, parsedDate.day);
-
-      if (expenseDay == today) {
-        return lang == 'ky' ? 'Бүгүн' : (lang == 'en' ? 'Today' : 'Сегодня');
-      } else if (expenseDay == yesterday) {
-        return lang == 'ky' ? 'Кечээ' : (lang == 'en' ? 'Yesterday' : 'Вчера');
-      } else {
-        return DateFormat('dd.MM.yyyy').format(parsedDate);
-      }
-    } catch (e) {
-      return '';
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
-    final currentLang = langProvider.currentLang;
+    final String currentLang = langProvider.currentLang;
 
-    // Тилге жараша өзгөрүүчү тексттер (AppStrings'ге байланды)
-    final translations = AppStrings.getTranslation(currentLang);
-    String balanceTitle = translations['balance_title'] ?? "ЖАЛПЫ БАЛАНС";
-    String recentExpensesTitle = translations['recent_expenses'] ?? "Акыркы чыгашалар";
-    String noExpensesText = translations['no_expenses'] ?? "Чыгымдар азырынча жок";
-    String clearAllText = translations['clear_all'] ?? "Баарын өчүрүү";
+    final bool isKy = currentLang == 'ky';
+    final bool isRu = currentLang == 'ru';
 
-    final String currencySymbol = _getCurrencySymbol(_userCurrency);
+    String balanceTitle = isKy ? "ЖАЛПЫ БАЛАНС" : (isRu ? "ОБЩИЙ БАЛАНС" : "TOTAL BALANCE");
+    String recentExpensesTitle = isKy ? "Акыркы чыгашалар" : (isRu ? "Последние расходы" : "Recent Expenses");
+    String noExpensesText = isKy ? "Чыгымдар азырынча жок" : (isRu ? "Расходов пока нет" : "No expenses yet");
+    String upcomingSubTitle = isKy ? "Жакынкы төлөмдөр" : (isRu ? "Ближайшие платежи" : "Upcoming Payments");
 
     return Scaffold(
       backgroundColor: const Color(0xFF12161A),
       body: SafeArea(
-        child: BlocConsumer<LedgerManagerBloc, LedgerManagerState>(
-          listener: (context, state) {},
-          builder: (context, state) {
-            double totalBalance = 0.0;
-            List<dynamic> allRecentExpenses = [];
+        child: RefreshIndicator(
+          onRefresh: () async => _refreshData(),
+          color: const Color(0xFF4ADE80),
+          backgroundColor: const Color(0xFF1E252B),
+          child: BlocBuilder<LedgerManagerBloc, LedgerManagerState>(
+            builder: (context, state) {
+              double totalBalance = 0.0;
+              List<Map<String, dynamic>> allRecentExpenses = [];
+              List<dynamic> subsList = [];
 
-            if (state is LedgerManagerLoaded) {
-              final List<dynamic> hubsList = state.hubs;
-              final String defaultExpenseTitle = translations['expense'] ?? 'Чыгым';
+              // 🌟 Блок Loaded абалында болгондо капчыктарды жана алардын ичиндеги чыгашаларды окуйбуз
+              if (state is LedgerManagerLoaded) {
+                final List<dynamic> hubsList = state.hubs;
+                subsList = state.subscriptions; // Абонементтер
 
-              for (var hub in hubsList) {
-                if (hub != null && hub['expenses'] != null) {
-                  final List<dynamic> expList = hub['expenses'] ?? [];
-                  for (var exp in expList) {
-                    if (exp != null) {
-                      final double amt = (exp['amount'] ?? 0.0).toDouble();
-                      totalBalance += amt;
-                      
-                      String expDescription = (exp['description'] ?? '').toString().trim();
-                      if (expDescription.isEmpty || expDescription == 'Чыгым') {
-                        expDescription = defaultExpenseTitle;
+                for (var hub in hubsList) {
+                  if (hub != null) {
+                    // Ар бир капчыктын ичиндеги чыгашалардын тизмеси
+                    final List<dynamic> expList = hub['expenses'] ?? [];
+                    for (var exp in expList) {
+                      if (exp != null) {
+                        final double amt = (exp['amount'] ?? 0.0).toDouble();
+                        totalBalance += amt; // Чыгашаларды жалпы баланска кошуу
+
+                        // Акыркы чыгашалардын тизмесине кошуу
+                        allRecentExpenses.add({
+                          'id': exp['id'],
+                          'description': (exp['description'] ?? '').toString().trim(),
+                          'amount': amt,
+                          'date': exp['created_at'] ?? '',
+                          'hub_name': (hub['name'] ?? '') as String, // Кайсы капчыкка таандык экени
+                        });
                       }
-
-                      allRecentExpenses.add({
-                        'id': exp['id'],
-                        'description': expDescription,
-                        'amount': amt,
-                        'date': exp['created_at'] ?? '',
-                        'hub_name': (hub['name'] ?? 'Башка') as String,
-                      });
                     }
                   }
                 }
+                // Акыркы кошулган чыгашаларды эң өйдө жагына сорттоо (датасы боюнча)
+                allRecentExpenses.sort((a, b) => (b['date'] ?? '').toString().compareTo((a['date'] ?? '').toString()));
               }
-              // Акыркы кошулган чыгымдарды биринчи көрсөтүү үчүн датасы менен сорттойбуз
-              allRecentExpenses.sort((a, b) => (b['date'] ?? '').compareTo(a['date'] ?? ''));
-            }
 
-            return RefreshIndicator(
-              onRefresh: () async => _refreshData(),
-              color: const Color(0xFF4ADE80),
-              backgroundColor: const Color(0xFF1E252B),
-              child: SingleChildScrollView(
+              return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                 child: Column(
@@ -147,7 +87,7 @@ class _HomeViewState extends State<HomeView> {
                   children: [
                     const SizedBox(height: 10),
 
-                    // 1. ЖАЛПЫ БАЛАНС КАРТОЧКАСЫ
+                    // 💳 1. ЖАЛПЫ БАЛАНС КАРТОЧКАСЫ
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -164,183 +104,111 @@ class _HomeViewState extends State<HomeView> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '+$currencySymbol${totalBalance.toStringAsFixed(2)}',
-                            style: const TextStyle(color: Color(0xFF4ADE80), fontSize: 32, fontWeight: FontWeight.bold),
+                            '-₽${totalBalance.toStringAsFixed(2)}',
+                            style: const TextStyle(color: Color(0xFFFB7185), fontSize: 32, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
-                                        Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E252B),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // ТУУРАЛАНДЫ: Сол жактагы элементтер экрандан чыкпашы үчүн Expanded ичине алынды
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 40, height: 40,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF221314), 
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(Icons.notifications_active_rounded, color: Color(0xFFEF4444), size: 20),
-                                ),
-                                const SizedBox(width: 12),
-                                // Бул жерге да Expanded кошулду, узун тексттерди автоматтык түрдө кыскартат
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        translations['spotify_title'] ?? 'Spotify жазылуусу', 
-                                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        translations['spotify_remind'] ?? 'Ар айдын 12синде', 
-                                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8), // Оң жана сол жактын ортосундагы аралык
-                          
-                          // ТУУРАЛАНДЫ: Тексттеги өзгөрмө туура форматталды
-                          Text(
-  '-$currencySymbol' '0.00', // Автоматически склеит символ валюты и цифры
-  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-)
 
-                        ],
-                      ),
-                    ),
-
-                    // 3. АКЫРКЫ ЧЫГАШАЛАРДЫН ТИЗМЕСИ
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          recentExpensesTitle,
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        if (allRecentExpenses.isNotEmpty)
-                          TextButton(
-                            onPressed: () {
-                              context.read<LedgerManagerBloc>().add(ClearAllExpensesEvent());
-                            },
-                            child: Text(
-                              clearAllText,
-                              style: const TextStyle(color: Color(0xFFEF4444), fontSize: 14),
-                            ),
-                          ),
-                      ],
+                    // 🔔 2. ЖАКЫНКЫ ТӨЛӨМДӨР (АБОНЕМЕНТТЕР)
+                    Text(
+                      upcomingSubTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
 
-                    if (state is LedgerManagerLoading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+                    if (subsList.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E252B),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      )
-                    else if (allRecentExpenses.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40.0),
+                        child: Center(
                           child: Text(
-                            noExpensesText,
-                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 15),
+                            isKy ? "Жазылуулар азырынча жок" : "Подписок пока нет", 
+                            style: const TextStyle(color: Color(0xFF64748B))
                           ),
                         ),
                       )
                     else
-                      ListView.separated(
+                      ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: allRecentExpenses.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 10),
+                        itemCount: subsList.length,
                         itemBuilder: (context, index) {
-                          final expense = allRecentExpenses[index];
-                          return Dismissible(
-                            key: Key(expense['id'].toString()),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                          final sub = subsList[index];
+                          final String subName = sub['name'] ?? 'Подписка';
+                          final double subAmount = (sub['amount'] ?? 0.0).toDouble();
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E252B),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            onDismissed: (direction) {
-                              // ТУУРАЛАНДЫ: Именной параметр жана кашаалар жабылды
-                              context.read<LedgerManagerBloc>().add(DeleteExpenseEvent(id: expense['id']));
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E252B),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          expense['description'],
-                                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "${expense['hub_name']} • ${_formatExpenseDate(expense['date'], currentLang)}",
-                                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40, height: 40,
+                                  decoration: BoxDecoration(color: const Color(0xFF12161A), borderRadius: BorderRadius.circular(12)),
+                                  child: Icon(
+                                    subName.toLowerCase().contains('тренировка') || subName.toLowerCase().contains('фитнес') || subName.toLowerCase().contains('ддх')
+                                        ? Icons.fitness_center_rounded
+                                        : (subName.toLowerCase().contains('medium') ? Icons.book_rounded : Icons.card_membership_rounded),
+                                    color: const Color(0xFF4ADE80), size: 20
                                   ),
-                                  Text(
-                                    '-$currencySymbol${(expense['amount'] as double).toStringAsFixed(2)}',
-                                    style: const TextStyle(color: Color(0xFFEF4444), fontSize: 15, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    subName,
+                                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Text(
+                                  "-₽${subAmount.toStringAsFixed(2)}",
+                                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                ),
+                              ],
                             ),
                           );
                         },
                       ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+                    const SizedBox(height: 24),
 
+                    // 📊 3. АКЫРКЫ ЧЫГЫШАЛАР БӨЛҮМҮ (Капчыктардагы чыныгы чыгашалар ушул жерге чыгат!)
+                    Text(
+                      recentExpensesTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
 
-                  
+                    if (allRecentExpenses.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(40),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E252B),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Center(
+                          child: Text(
+                            noExpensesText,
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: allRecentExpenses.length > 5 ? 5 : allRecentExpenses.length, // Акыркы 5 чыгашаны гана көрсөтөт
+                        itemBuilder: (context, index) {final expense = allRecentExpenses[index];final String desc = expense['description'];final double amt = expense['amount'];final String hubName = expense['hub_name']; // Кайсы капчыктан коротулганы
+                        return Container(margin: const EdgeInsets.only(bottom: 12),padding: const EdgeInsets.all(16),decoration: BoxDecoration(color: const Color(0xFF1E252B),borderRadius: BorderRadius.circular(20),),child: Row(children: [Container(width: 40, height: 40,decoration: BoxDecoration(color: const Color(0xFF221314),borderRadius: BorderRadius.circular(12),),child: const Icon(Icons.arrow_downward_rounded, color: Color(0xFFEF4444), size: 20),),const SizedBox(width: 14),Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [Text(desc.isEmpty ? "Чыгым" : desc,style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),),const SizedBox(height: 3),Text(hubName,
+                         // Капчыктын аты (мис: Свадьба, Вечеринка)
+                         style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),),],),),Text("-₽${amt.toStringAsFixed(2)}",style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),),],),);},),],),);},),),),);}}

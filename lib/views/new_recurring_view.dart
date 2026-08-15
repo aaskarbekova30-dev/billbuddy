@@ -1,209 +1,173 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/services/data_sync_service.dart';
-import '../core/services/language_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/language_provider.dart'; // Тил провайдеринин дареги
+import '../core/state/ledger_manager_bloc.dart';
 
-//  Apple 4.3(a) Спам беренесинен өтүү үчүн жаңы класс аты
 class NewRecurringView extends StatefulWidget {
-  const NewRecurringView({super.key});
+  final int? initialDay;
+
+  const NewRecurringView({super.key, this.initialDay});
 
   @override
   State<NewRecurringView> createState() => _NewRecurringViewState();
 }
 
 class _NewRecurringViewState extends State<NewRecurringView> {
-  final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
   final _dayController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDay != null) {
+      _dayController.text = widget.initialDay.toString();
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _priceController.dispose();
+    _titleController.dispose();
+    _amountController.dispose();
     _dayController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    //  ОҢДОЛДУ: Эски ExpenseProvider ордуна жаңы DataSyncService классы чакырылды
-    final dataSyncService = Provider.of<DataSyncService>(context, listen: false);
+    // Тандалган тилди жүктөө
     final langProvider = Provider.of<LanguageProvider>(context);
 
+    // Снапбарлар үчүн котормолор (эгер тил файлында жок болсо, демейки кыргызчасы иштейт)
+    final String msgSuccess = langProvider.translate('subscription_saved').isEmpty 
+        ? 'Абонемент ийгиликтүү сакталды!' 
+        : langProvider.translate('subscription_saved');
+        
+    final String msgFillFields = langProvider.translate('fill_all_fields').isEmpty 
+        ? 'Сураныч, бардык талааларды толтуруңуз!' 
+        : langProvider.translate('fill_all_fields');
+        
+    final String msgInvalid = langProvider.translate('invalid_input').isEmpty 
+        ? 'Баасын же күндү туура эмес киргиздиңиз!' 
+        : langProvider.translate('invalid_input');
+
     return Scaffold(
-      backgroundColor: const Color(0xFF12161A), // Премиум кочкул боз фон
+      backgroundColor: const Color(0xFF12161A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
-          langProvider.translate('sub_title'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
+          langProvider.translate('new_subscription_title').isEmpty ? 'Жаңы абонемент' : langProvider.translate('new_subscription_title'), 
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
         ),
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              langProvider.translate('select_app'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            
-            // Бирринчи киргизүү кутучасы (Сервистин аталышы)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E252B), // Жумшак боз карточка фону
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TextField(
-                controller: _nameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: langProvider.translate('app_name_hint'),
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                ),
-              ),
+              langProvider.translate('add_subscription_header').isEmpty ? "Жазылууну кошуу" : langProvider.translate('add_subscription_header'), 
+              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)
             ),
             const SizedBox(height: 24),
-                        Text(
-              langProvider.translate('monthly_price'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+            TextField(
+              controller: _titleController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration(langProvider.translate('hint_title').isEmpty ? "Аталышы (мисалы: YouTube Premium)" : langProvider.translate('hint_title')),
             ),
-            const SizedBox(height: 10),
-            
-            // Баасын киргизүү кутучасы (Жаңы палитрада)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E252B),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TextField(
-                controller: _priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '${langProvider.translate('example')} 9.99',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                ),
-              ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration(langProvider.translate('hint_amount').isEmpty ? "Баасы (мисалы: 199.00)" : langProvider.translate('hint_amount')),
             ),
-            const SizedBox(height: 24),
-
-            Text(
-              langProvider.translate('payment_day'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _dayController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration(langProvider.translate('hint_day').isEmpty ? "Төлөнүүчү күнү (1-31)" : langProvider.translate('hint_day')),
             ),
-            const SizedBox(height: 10),
-            
-            // Күнүн киргизүү кутучасы (Жаңы палитрада)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E252B),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TextField(
-                controller: _dayController,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '${langProvider.translate('example')} 25',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                ),
-              ),
-            ),
-                        const Spacer(), // Баскычты экрандын эң түбүнө түртөт
-
-            // ЖАҢЫЛАНГАН АБОНЕМЕНТТИ КОШУУ БАСКЫЧЫ
+            const Spacer(),
             SizedBox(
               width: double.infinity,
-              height: 52,
-              child: InkWell(
-                onTap: () async {
-                  final name = _nameController.text.trim();
-                  final price = double.tryParse(_priceController.text.trim());
-                  final day = int.tryParse(_dayController.text.trim());
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4ADE80),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                onPressed: _isLoading ? null : () async {
+                  final String title = _titleController.text.trim();
+                  final double amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
+                  final int? day = int.tryParse(_dayController.text.trim());
 
-                  if (name.isNotEmpty &&
-                      price != null &&
-                      price > 0 &&
-                      day != null &&
-                      day >= 1 &&
-                      day <= 31) {
-                    
-                    // Эски `ExpenseProvider`дун ордуна 1-бөлүктөгү `dataSyncService` туура чакырылды.
-                    // Эгер сиздин базаңызда подписка кошуу функциясы башкача аталса (мисалы: addExpense), ошону калтырыңыз.
+                  if (title.isNotEmpty && amount > 0 && day != null && day >= 1 && day <= 31) {
+                    setState(() => _isLoading = true);
+
+                    final DateTime now = DateTime.now();
+                    final String formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}";
+
                     try {
-                      // Сиздин чыныгы функцияңыз коопсуз түрдө чакырылат
-                      (dataSyncService as dynamic).addSubscription(name, price, day);
+                      await Supabase.instance.client.from('subscriptions').insert({
+                        'name': title,
+                        'amount': amount,
+                        'date': formattedDate,
+                      });
+
+                      if (context.mounted) {
+                        // Календарды базадан кайра жаңылап жүктөйбүз
+                        context.read<LedgerManagerBloc>().add(LoadSubscriptionsEvent());
+                        
+                        // Ийгиликтүү сакталгандыгы тууралуу тандалган тилдеги билдирүү
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(msgSuccess), backgroundColor: Colors.green),
+                        );
+                        
+                        Navigator.pop(context);
+                      }
                     } catch (e) {
-                      // Ката чыкса коопсуздук үчүн өчүрүү
-                    }
-                    
-                    if (context.mounted) {
-                      Navigator.pop(context);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ката кетти: $e'), backgroundColor: Colors.redAccent));
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isLoading = false);
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          langProvider.translate('enter_all_fields'),
-                        ),
-                        backgroundColor: const Color(0xFFFB7185), // Жумшак кызыл ката түсү
-                      ),
+                      SnackBar(content: Text(title.isEmpty ? msgFillFields : msgInvalid), backgroundColor: Colors.orange),
                     );
                   }
                 },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4ADE80), // 🌟 Биз тандаган жалбыз жашыл түс
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    langProvider.translate('add_button'),
-                    style: const TextStyle(
-                      color: Color(0xFF12161A), // Тексттин кочкул боз түсү
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                child: _isLoading 
+                    ? const CircularProgressIndicator(color: Color(0xFF12161A))
+                    : Text(
+                        langProvider.translate('save_button').isEmpty ? "Сактоо" : langProvider.translate('save_button'), 
+                        style: const TextStyle(color: Color(0xFF12161A), fontSize: 16, fontWeight: FontWeight.bold)
+                      ),
               ),
             ),
-            const SizedBox(height: 12),
           ],
         ),
       ),
     );
   }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF64748B)),
+      filled: true, fillColor: const Color(0xFF1E252B),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+    );
+  }
 }
-
-
-

@@ -1,115 +1,186 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart'; 
-import '../core/services/language_provider.dart';
-import '../core/state/auth_bloc.dart'; 
-import 'main_view.dart'; // Жаңы менеджер кабык
+import 'package:provider/provider.dart';
+import '../core/services/language_provider.dart'; // Локализация тутуму
+import '../core/state/ledger_manager_bloc.dart';
 
+class HubDetailsView extends StatefulWidget {
+  final Map<String, dynamic> hub;
 
-class SignUpView extends StatefulWidget {
-  const SignUpView({super.key});
+  const HubDetailsView({super.key, required this.hub});
 
   @override
-  State<SignUpView> createState() => _SignUpViewState();
+  State<HubDetailsView> createState() => _HubDetailsViewState();
 }
 
-class _SignUpViewState extends State<SignUpView> {
-  // Контроллерлордун тартиби аралаштырылды
-  final _confirmPasswordController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _HubDetailsViewState extends State<HubDetailsView> {
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
 
   @override
   void dispose() {
-    _confirmPasswordController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _titleController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
-  // Көп тилдүү интерфейс маалыматтары бирдиктүү коопсуз базага жыйналды
-  String _fetchSecureText(String key, String lang) {
-    final Map<String, Map<String, String>> securePack = {
-      'ru': {
-        'title_signup': 'Создать аккаунт',
-        'hint_empty': 'Заполните все поля!',
-        'hint_match': 'Пароли не совпадают!',
-        'btn_signup': 'Зарегистрироваться',
+  // Окно добавления расхода с поддержкой смены языков
+  void _showAddExpenseBottomSheet(BuildContext parentContext) {
+    final langProvider = Provider.of<LanguageProvider>(parentContext, listen: false);
+
+    showModalBottomSheet(
+      context: parentContext,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E252B),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 24, left: 24, right: 24
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                langProvider.translate('add_expense_title').isEmpty ? "Добавить расход в кошелек" : langProvider.translate('add_expense_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _titleController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(langProvider.translate('hint_expense_name').isEmpty ? "Название расхода" : langProvider.translate('hint_expense_name')),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(langProvider.translate('hint_expense_amount').isEmpty ? "Сумма (RUB)" : langProvider.translate('hint_expense_amount')),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4ADE80),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    final String title = _titleController.text.trim();
+                    final double amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
+                    final int groupId = widget.hub['id'] as int;
+
+                    if (title.isNotEmpty && amount > 0) {
+                      parentContext.read<LedgerManagerBloc>().add(
+                        AddExpenseEvent(
+                          title: title,
+                          amount: amount,
+                          groupId: groupId,
+                          currency: 'RUB',
+                          category: widget.hub['category'] ?? 'Other',
+                        ),
+                      );
+                      
+                      _titleController.clear();
+                      _amountController.clear();
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(
+                    langProvider.translate('btn_save_expense').isEmpty ? "Сохранить расход" : langProvider.translate('btn_save_expense'),
+                    style: const TextStyle(color: Color(0xFF12161A), fontSize: 16, fontWeight: FontWeight.bold)
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
       },
-      'en': {
-        'title_signup': 'Create Account',
-        'hint_empty': 'Please fill all fields!',
-        'hint_match': 'Passwords do not match!',
-        'btn_signup': 'Sign Up',
+    );
+  }
+
+  void _showSplitBillDialog(double totalSpent, LanguageProvider langProvider) {
+    final memberCountController = TextEditingController(text: "2");
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E252B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(widget.hub['name'] ?? 'Wallet', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("${langProvider.translate('total_spent_lbl')} $totalSpent RUB", style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              const SizedBox(height: 20),
+              const Text("Разделить на сколько человек?", style: TextStyle(color: Colors.white, fontSize: 14)),
+              const SizedBox(height: 10),
+              TextField(
+                controller: memberCountController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration("Количество людей"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Отмена", style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4ADE80),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                final int people = int.tryParse(memberCountController.text.trim()) ?? 1;
+                if (people > 0) {
+                  final double perPerson = totalSpent / people;
+                  Navigator.pop(context);
+                  
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: const Color(0xFF12161A),
+                      title: const Text("Результат", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      content: Text(
+                        "Каждый человек должен оплатить:\n\n₽${perPerson.toStringAsFixed(2)} RUB",
+                        style: const TextStyle(color: Color(0xFF4ADE80), fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("OK", style: TextStyle(color: Color(0xFF4ADE80))),
+                        )
+                      ],
+                    ),
+                  );
+                }
+              },
+              child: const Text("Разделить", style: TextStyle(color: Color(0xFF12161A), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
       },
-      'ky': {
-        'title_signup': 'Катталуу',
-        'hint_empty': 'Талааларды толтуруңуз!',
-        'hint_match': 'Сырсөздөр бири-бирине дал келген жок!',
-        'btn_signup': 'Катталуу',
-      }
-    };
-    return securePack[lang]?[key] ?? '';
-  }
-    // Ката билдирүүлөрүн тилге жараша коопсуз таануу
-  String _parseSystemError(String originalMessage, String lang) {
-    final lowerMessage = originalMessage.toLowerCase();
-    if (lang == 'ru') {
-      if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Этот Email уже зарегистрирован!';
-      if (lowerMessage.contains('weak_password')) return 'Пароль слишком простой! Минимум 6 символов.';
-      if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Неверный формат Email.';
-      if (lowerMessage.contains('network')) return 'Ошибка сети. Проверьте интернет-соединение.';
-    } 
-    else if (lang == 'en') {
-      if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'This Email is already registered!';
-      if (lowerMessage.contains('weak_password')) return 'Password is too weak! Minimum 6 characters.';
-      if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Invalid Email format.';
-      if (lowerMessage.contains('network')) return 'Network error. Please check your internet connection.';
-    }
-    if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Бул Email дарек катталган!';
-    if (lowerMessage.contains('weak_password')) return 'Пароль өтө жөнөкөй! Кеминде 6 символ болушу керек.';
-    if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Email дарек туура эмес форматта.';
-    if (lowerMessage.contains('network')) return 'Интернет байланышын текшерип, кайра аракет кылыңыз.';
-    return originalMessage; 
-  }
-
-  // Роботторду адаштыруу үчүн валидация логикасы өзгөртүлдү
-  void _executeSecureRegistration(LanguageProvider langProvider) {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_fetchSecureText('hint_empty', langProvider.currentLang)),
-          backgroundColor: const Color(0xFFFB7185), // Жумшак кызыл
-        ),
-      );
-      return;
-    }
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_fetchSecureText('hint_match', langProvider.currentLang)),
-          backgroundColor: const Color(0xFFFB7185),
-        ),
-      );
-      return;
-    }
-
-    // Блоктун ивентине коопсуз өткөрүү
-    context.read<AuthBloc>().add(SignUpRequested(email: email, password: password));
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
-    final currentLang = langProvider.currentLang;
+    final String groupName = widget.hub['name'] ?? 'Wallet';
+    final double limitAmount = (widget.hub['limit_amount'] ?? 0.0).toDouble();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF12161A), // Премиум кочкул боз фон
+      backgroundColor: const Color(0xFF12161A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -117,151 +188,55 @@ class _SignUpViewState extends State<SignUpView> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        title: Text(groupName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        centerTitle: true,
         actions: [
-          DropdownButton<String>(
-            value: currentLang,
-            dropdownColor: const Color(0xFF1E252B),
-            icon: const Icon(Icons.language, color: Color(0xFF4ADE80), size: 18),
-            underline: const SizedBox(),
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-            onChanged: (String? newLang) {
-              if (newLang != null) {
-                langProvider.changeLanguage(newLang);
-              }
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFFB7185)),
+            onPressed: () {
+              context.read<LedgerManagerBloc>().add(SettleUpGroupEvent(groupId: widget.hub['id'] as int));
+              Navigator.pop(context);
             },
-            items: const [
-              DropdownMenuItem(value: 'ky', child: Text(' KG ')),
-              DropdownMenuItem(value: 'ru', child: Text(' RU ')),
-              DropdownMenuItem(value: 'en', child: Text(' EN ')),
-            ],
-          ),
-          const SizedBox(width: 16),
+          )
         ],
       ),
-      body: BlocConsumer<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is Authenticated) {
-            Navigator.pushReplacement(
-              context, 
-              MaterialPageRoute(builder: (context) => const MainView()),
+      body: BlocBuilder<LedgerManagerBloc, LedgerManagerState>(
+        builder: (context, state) {
+          List<dynamic> currentExpenses = [];
+          
+          if (state is LedgerManagerLoaded) {
+            final currentHub = state.hubs.firstWhere(
+              (h) => h != null && h['id'] == widget.hub['id'],
+              orElse: () => <String, dynamic>{},
             );
+            if (currentHub.isNotEmpty) {
+              currentExpenses = currentHub['expenses'] ?? [];
+            }
           }
-          if (state is AuthError) {
-            final localizedMsg = _parseSystemError(state.message, currentLang);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(localizedMsg), backgroundColor: const Color(0xFFFB7185)),
-            );
+
+          double totalSpent = 0.0;
+          for (var exp in currentExpenses) {
+            totalSpent += (exp['amount'] ?? 0.0).toDouble();
           }
-        },
-                builder: (context, state) {
-          return Center(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(
-                    Icons.fingerprint_rounded, 
-                    size: 80,
-                    color: Color(0xFF4ADE80),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _fetchSecureText('title_signup', currentLang),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white, 
-                      fontSize: 26, 
-                      fontWeight: FontWeight.w900, 
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                
-                  _buildSecureField(
-                    controller: _emailController,
-                    hint: 'Email',
-                    icon: Icons.mail_outline_rounded,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSecureField(
-                    controller: _passwordController,
-                    hint: 'Password',
-                    icon: Icons.lock_outline_rounded,
-                    isHide: true,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSecureField(
-                    controller: _confirmPasswordController,
-                    hint: currentLang == 'ru' ? 'Повторите пароль' : (currentLang == 'en' ? 'Confirm Password' : 'Сырсөздү кайталоо'),
-                    icon: Icons.gpp_good_outlined,
-                    isHide: true,
-                  ),
-                  const SizedBox(height: 28),
-                  
-                  // Жүктөө анимациясы же Катталуу баскычы
-                  state is AuthLoading
-                      ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80))))
-                      : InkWell(
-                          onTap: () => _executeSecureRegistration(langProvider),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4ADE80),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              _fetchSecureText('btn_signup', currentLang),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFF12161A), 
-                                fontSize: 16, 
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
-
-  Widget _buildSecureField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool isHide = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E252B),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isHide,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          icon: Icon(icon, color: const Color(0xFF4ADE80), size: 20),
-          border: InputBorder.none,
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-        ),
-      ),
-    );
-  }
-}
-
-
+          return Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Главная карточка лимитов
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: const Color(0xFF1E252B), borderRadius: BorderRadius.circular(24)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                       langProvider.translate('total_wallet_limit').isEmpty ? "ОБЩИЙ ЛИМИТ КОШЕЛЬКА" : langProvider.translate('total_wallet_limit'),style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold)),const SizedBox(height: 6),Text("₽$limitAmount RUB", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),const SizedBox(height: 16),const Divider(color: Color(0xFF12161A)),const SizedBox(height: 10),Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [Text(langProvider.translate('total_spent_lbl').isEmpty ? "Потрачено всего:" : langProvider.translate('total_spent_lbl'),style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),Text("₽$totalSpent RUB", style: const TextStyle(color: Color(0xFFFB7185), fontSize: 16, fontWeight: FontWeight.bold)),],),],),),const SizedBox(height: 24),
+                       // Кнопка деления счета
+                       if (currentExpenses.isNotEmpty)SizedBox(width: double.infinity,height: 50,child: OutlinedButton.icon(style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF4ADE80), width: 1.5),shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),),onPressed: () => _showSplitBillDialog(totalSpent, langProvider),icon: const Icon(Icons.ios_share_rounded, color: Color(0xFF4ADE80), size: 20),label: Text(langProvider.translate('split_with_friends').isEmpty ? "Разделить расходы с друзьями" : langProvider.translate('split_with_friends'),style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold)),),),const SizedBox(height: 30),Text(langProvider.translate('expense_list_lbl').isEmpty ? "Список расходов:" : langProvider.translate('expense_list_lbl'),style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.bold)),const SizedBox(height: 14),
+                       // Список расходов в кошельке
+                       Expanded(child: currentExpenses.isEmpty? Center(child: Text(langProvider.translate('no_expenses_yet').isEmpty ? "В этом кошельке расходов пока нет" : langProvider.translate('no_expenses_yet'),style: const TextStyle(color: Color(0xFF64748B)))): ListView.separated(physics: const BouncingScrollPhysics(),itemCount: currentExpenses.length,separatorBuilder: (context, index) => const Divider(color: Color(0xFF1E252B)),itemBuilder: (context, index) {final exp = currentExpenses[index];final String desc = exp['description'] ?? 'Expense';final double amt = (exp['amount'] ?? 0.0).toDouble();return ListTile(contentPadding: EdgeInsets.zero,leading: Container(width: 40, height: 40,decoration: BoxDecoration(color: const Color(0xFF12161A), borderRadius: BorderRadius.circular(12)),child: const Icon(Icons.arrow_downward_rounded, color: Color(0xFFFB7185), size: 18),),title: Text(desc, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),trailing: Text("-₽$amt", style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),);},),),
+                       // Нижняя кнопка добавления
+                       SizedBox(width: double.infinity,height: 54,child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4ADE80),shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),),onPressed: () => _showAddExpenseBottomSheet(context),child: Text(langProvider.translate('btn_save_expense').isEmpty ? "+ Добавить расход" : "+ ${langProvider.translate('btn_save_expense')}",style: const TextStyle(color: Color(0xFF12161A), fontSize: 16, fontWeight: FontWeight.bold)),),),],),);},),);}InputDecoration _inputDecoration(String hint) {return InputDecoration(hintText: hint,hintStyle: const TextStyle(color: Color(0xFF64748B)),fillColor: const Color(0xFF12161A),filled: true,border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),);}} 

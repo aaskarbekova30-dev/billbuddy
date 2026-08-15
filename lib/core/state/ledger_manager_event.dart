@@ -41,3 +41,12 @@ class SettleUpGroupEvent extends LedgerManagerEvent {
   final int groupId;
   SettleUpGroupEvent({required this.groupId});
 }
+
+// 1. Календарь экраны үчүн абонементтерди жүктөө окуясы
+class LoadSubscriptionsEvent extends LedgerManagerEvent {}
+
+// 2. Абонементти календарь экранынан сүрүп өчүрүү окуясы
+class DeleteSubscriptionEvent extends LedgerManagerEvent {
+  final int id;
+  DeleteSubscriptionEvent({required this.id});
+}
