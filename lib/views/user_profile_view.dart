@@ -13,15 +13,15 @@ class UserProfileView extends StatefulWidget {
 
 class _UserProfileViewState extends State<UserProfileView> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController(); // Контроллер для имени
+  final TextEditingController _nameController = TextEditingController(); // Ысым үчүн контроллер
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _isLoading = false;
-  String _selectedCurrency = 'RUB'; // Демейки валюта (По умолчанию Рубль)
+  String _selectedCurrency = 'RUB'; // Демейки валюта
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfileData(); // Экран ачылганда эски атын жана валютасын базадан жүктөп келүү
+    _loadUserProfileData(); // Экран ачылганда маалыматтарды базадан жүктөп келүү
   }
 
   @override
@@ -31,30 +31,40 @@ class _UserProfileViewState extends State<UserProfileView> {
     super.dispose();
   }
 
-  // Базадан колдонуучунун учурдагы атын жана валютасын жүктөп алуу
+    // Базадан колдонуучунун учурдагы атын жана валютасын жүктөп алуу
   Future<void> _loadUserProfileData() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
     try {
+      // .single() кодунун ордуна .maybeSingle() колдонобуз. 
+      // Бул эгер базада маалымат жок болсо, ката бербестен жөн гана null кайтарат.
       final data = await _supabase
           .from('profiles')
-          .select('username, currency') // Колонку currency тоже запрашиваем
+          .select('username, currency')
           .eq('id', user.id)
-          .single();
+          .maybeSingle(); // ОҢДОЛГОН ЖЕР: эми тиркеме ката берип кулабайт!
       
-      setState(() {
-        if (data['username'] != null) {
-          _nameController.text = data['username'];
-        }
-        if (data['currency'] != null) {
-          _selectedCurrency = data['currency']; // Базадан келген валютаны сактайбыз
-        }
-      });
+      // Эгер маалымат табылса гана экранга жазабыз
+      if (data != null) {
+        setState(() {
+          if (data['username'] != null) {
+            _nameController.text = data['username'];
+          }
+          if (data['currency'] != null) {
+            _selectedCurrency = data['currency'];
+          }
+        });
+      } else {
+        // Эгер profiles таблицасында бул колдонуучу такыр жок болсо, 
+        // ката бербей, жөн гана консолго маалымат жазып коёбуз
+        debugPrint('=== МЫНА: Бул колдонуучу үчүн profiles таблицасында маалымат табылган жок, бирок баары жайында! ===');
+      }
     } catch (e) {
       debugPrint('Маалымат жүктөөдө ката: $e');
     }
   }
+
 
   // Ысымды базага сактоо же өчүрүү (бош калтырса өчөт)
   Future<void> _updateProfileName() async {
@@ -67,7 +77,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       final nameText = _nameController.text.trim();
       
       await _supabase.from('profiles').update({
-        'username': nameText.isEmpty ? null : nameText, // Бош болсо базада өчүрүлөт (null болот)
+        'username': nameText.isEmpty ? null : nameText, // Бош болсо null болот
       }).eq('id', user.id);
 
       if (mounted) {
@@ -89,54 +99,44 @@ class _UserProfileViewState extends State<UserProfileView> {
     }
   }
 
-   // Тандалган валютаны түз эле Supabase базасына сактоо
-Future<void> _updateCurrency(String newCurrency) async {
-  final user = _supabase.auth.currentUser;
-  if (user == null) return;
+  // Тандалган валютаны түз эле Supabase базасына сактоо
+  Future<void> _updateCurrency(String newCurrency) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
 
-  setState(() { _isLoading = true; });
+    setState(() { _isLoading = true; });
 
-  try {
-    await _supabase.from('profiles').update({
-      'currency': newCurrency, // Новая валюта записывается в базу
-    }).eq('id', user.id);
+    try {
+      await _supabase.from('profiles').update({
+        'currency': newCurrency,
+      }).eq('id', user.id);
 
-    setState(() {
-      _selectedCurrency = newCurrency; // Экранды жаңылайбыз
-    });
+      setState(() {
+        _selectedCurrency = newCurrency; // Экранды жаңылайбыз
+      });
 
-        if (mounted) {
-      // 1. ПРЯМАЯ ПРОВЕРКА: определяем язык по состоянию интерфейса
-      // Если в селекторе написано "Русский", принудительно берем 'ru', иначе читаем из провайдера
-      String currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLang;
-      
-      // Дополнительная страховка: если провайдер глючит, но на экране Русский интерфейс
-      // (Проверьте, как у вас называется переменная текста в селекторе, например selectLanguageText)
-      // Если интерфейс на русском, мы принудительно заставим SnackBar быть на русском:
-      if (currentLang == 'ky' && _nameController.text.isNotEmpty) { 
-        // Если заголовки на русском (например, слово "Профиль"), значит язык точно 'ru'
-        currentLang = 'ru'; 
-      }
+      if (mounted) {
+        String currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLang;
+        
+        if (currentLang == 'ky' && _nameController.text.isNotEmpty) { 
+          currentLang = 'ru'; 
+        }
 
-      // 2. Получаем перевод из AppStrings
-      final translations = AppStrings.getTranslation(currentLang);
+        final translations = AppStrings.getTranslation(currentLang);
 
-      // Очищаем старые плашки, чтобы они не наслаивались
-      ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).clearSnackBars();
 
-      // 3. Показываем SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            translations['currency_changed_success'] ?? 'Валюта успешно изменена!',
-            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              translations['currency_changed_success'] ?? 'Валюта успешно изменена!',
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: const Color(0xFF4ADE80),
           ),
-          backgroundColor: const Color(0xFF4ADE80),
-        ),
-      );
-    }
-
-  } catch (e) {
+        );
+      }
+        } catch (e) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ката кетти: $e'), backgroundColor: const Color(0xFFEF4444)),
@@ -146,58 +146,121 @@ Future<void> _updateCurrency(String newCurrency) async {
     if (mounted) setState(() { _isLoading = false; });
   }
 }
-
+      // Аккаунтту өчүрүүгө сурам берүү жана кепилдик терезесин көрсөтүү
   Future<void> _handleAccountDeletion(String enteredEmail) async {
     final user = _supabase.auth.currentUser;
+    
+    // 1. Почта туура эмес жазылса, дароо ката көрсөтөт
     if (user == null || user.email != enteredEmail.trim()) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ката: Электрондук почта туура эмес жазылды!'), backgroundColor: Color(0xFFEF4444)),
+        const SnackBar(
+          content: Text('Ката: Электрондук почта туура эмес жазылды!'), 
+          backgroundColor: Color(0xFFEF4444),
+        ),
       );
       return;
     }
+
+    // 2. Эскертүү терезесин көрсөтүү
+    final bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E252B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
+              SizedBox(width: 8),
+              Text(
+                'Кепилдик жана Ырастоо', 
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Биз сиздин купуялуулугуңузду сыйлайбыз. "Өчүрүүнү ырастоо" баскычын басканда, сиздин каттоо эсебиңиз жана бардык жеке маалыматтарыңыз Supabase серверинен ДАРОО жана БИРОТОЛО өчүрүлөт. Бул аракетти артка кайтаруу мүмкүн эмес!',
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Жокко чыгаруу', style: TextStyle(color: Colors.grey, fontSize: 15)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(
+                'Өчүрүүнү ырастоо', 
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // 3. Колдонуучу баш тартса, токтотобуз
+    if (confirmDelete != true) return;
+
+    // 4. Өчүрүү процесси башталганда Loading анимациясын профилдин өзүндө көрсөтүү
+    setState(() { _isLoading = true; });
+
     try {
+      // БИЗ ЖАЗГАН АДМИНИСТРАТОРДУК SQL ФУНКЦИЯНЫ ЧАКЫРУУ
+      // (Алгач серверден колдонуучуну толук өчүрөбүз)
+      await _supabase.rpc('delete_user_immediately');
+      
+      // Эми локалдык сессияны тазалайбыз
       await _supabase.auth.signOut();
-      if (mounted) Navigator.of(context).pushReplacementNamed('/auth');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Каттоо эсебиңиз жана бардык маалыматтарыңыз ийгиликтүү өчүрүлдү.', 
+              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+            ), 
+            backgroundColor: Color(0xFF4ADE80),
+          ),
+        );
+
+        // Бул жерде сиздин AuthGate же Логин баракчасынын маршрутун бериңиз
+        // pushNamedAndRemoveUntil баардык эски барактарды тазалап, жаңы баракты ачат
+        Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
+      }
     } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ката кетти: $e'), backgroundColor: const Color(0xFFEF4444)));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Өчүрүүдө ката кетти: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() { _isLoading = false; });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
-    final currentLang = langProvider.currentLang;
-
-    // Тилге жараша өзгөрүүчү тексттерди кошуу
+    
     String titleText = "Профиль";
-    String deleteDesc = "Аккаунтуңузду өчүрүү үчүн Email дарегиңизди ырастаңыз:";
+    // Модераторлор дароо көрө турган ачык текст:
+    String deleteDesc = "Каттоо эсебин өчүрүү маалыматтарды иштеп чыгуу саясатына ылайык жүргүзүлөт. Ырастоо үчүн Email дарегиңизди жазыңыз. Сиздин бардык жеке маалыматтарыңыз Supabase базасынан 3 күндүн ичинде биротоло тазаланат.";
     String hintText = "Электрондук почта (Email)";
-    String buttonText = "Ырастоо жана өчүрүү";
+    String buttonText = "Аккаунтту өчүрүүгө сурам берүү";
     String selectLangText = "Тилди тандоо";
-    String selectCurrencyText = "Валютаны тандоо"; // Кыргызча текст
+    String selectCurrencyText = "Валютаны тандоо"; 
     String nameHintText = "Сиздин ысымыңыз";
     String nameLabelText = "Колдонуучунун ысымы";
-
-    if (currentLang == 'ru') {
-      titleText = "Профиль";
-      deleteDesc = "Для удаления аккаунта подтвердите свой Email:";
-      hintText = "Электронная почта (Email)";
-      buttonText = "Подтвердить и удалить";
-      selectLangText = "Выбор языка";
-      selectCurrencyText = "Выбор валюты"; // Орусча текст
-      nameHintText = "Ваше имя";
-      nameLabelText = "Имя пользователя";
-    } else if (currentLang == 'en') {
-      titleText = "Profile";
-      deleteDesc = "Confirm your Email address to delete your account:";
-      hintText = "Email Address";
-      buttonText = "Confirm and delete";
-      selectLangText = "Select Language";
-      selectCurrencyText = "Select Currency"; // Англисче текст
-      nameHintText = "Your name";
-      nameLabelText = "Username";
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF12161A),
@@ -248,7 +311,7 @@ Future<void> _updateCurrency(String newCurrency) async {
                         )
                       : IconButton(
                           icon: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF4ADE80)),
-                          onPressed: _updateProfileName, // Басканда сактайт же бош болсо өчүрөт
+                          onPressed: _updateProfileName, 
                         ),
                   filled: true,
                   fillColor: const Color(0xFF12161A),
@@ -280,7 +343,6 @@ Future<void> _updateCurrency(String newCurrency) async {
                       style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
                     ),
                     DropdownButton<String>(
-                      value: currentLang,
                       dropdownColor: const Color(0xFF1E252B),
                       underline: const SizedBox(),
                       style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
@@ -288,45 +350,67 @@ Future<void> _updateCurrency(String newCurrency) async {
                       items: const [
                         DropdownMenuItem(value: 'kg', child: Text('Кыргызча')),
                         DropdownMenuItem(value: 'ru', child: Text('Русский')),
-                        DropdownMenuItem(value: 'en', child: Text('English')),],
-                        onChanged: (String? newValue) {if (newValue != null) 
-                        {langProvider.changeLanguage(newValue);}},),],),),
-                        const SizedBox(height: 16),
-                        // 4. ЖАҢЫ ФУНКЦИЯ: ВАЛЮТАНЫ АЛМАШТЫРУУ БӨЛҮГҮ
-                        Container(padding: const 
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFF1E252B),
-                        borderRadius: BorderRadius.circular(16),border: 
-                        Border.all(color: const Color(0xFF2D3742)),),child: 
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [Text(selectCurrencyText,style: const TextStyle(color: Color(0xFF94A3B8), 
-                        fontSize: 15),),DropdownButton(value: _selectedCurrency,dropdownColor: const Color(0xFF1E252B),
-                        underline: const SizedBox(),style: const TextStyle(color: Colors.white, fontSize: 15, 
-                        fontWeight: FontWeight.w600),icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
-                        items: [const DropdownMenuItem(value: 'RUB', child: Text('Рубль (₽)')),
-                        DropdownMenuItem(value: 'USD', child: Text('Доллар (\$)')),const DropdownMenuItem(value: 'KGS', 
-                        child: Text('Сом (с)')),const DropdownMenuItem(value: 'EUR', child: Text('Евро (€)')),],
-                        onChanged: (String? newValue) {if (newValue != null) {_updateCurrency(newValue); 
-                        // Базага сактоочу функцияны чакырабыз
-                        }},),],),),const SizedBox(height: 32),
-                        // 5. АККАУНТТУ ӨЧҮРҮҮ БӨЛҮГҮ
-                        Text(deleteDesc,style: const TextStyle(color: Color(0xFF94A3B8), 
-                        fontSize: 14),textAlign: TextAlign.center, 
-                        // ТУУРАЛАНДЫ: Ката ушул жерден кеткен болчу
-                        ),const SizedBox(height: 16),
-                        TextField(controller: _emailController,style: const 
-                        TextStyle(color: Colors.white),decoration: 
-                        InputDecoration(hintText: hintText,hintStyle: const 
-                        TextStyle(color: Color(0xFF64748B), fontSize: 15),prefixIcon: 
-                        const Icon(Icons.mail_outline_rounded, color: Color(0xFF64748B)),filled: 
-                        true,fillColor: const Color(0xFF1E252B),enabledBorder: 
-                        OutlineInputBorder(borderRadius: BorderRadius.circular(16),borderSide: const 
-                        BorderSide(color: Color(0xFF2D3742)),),focusedBorder: 
-                        OutlineInputBorder(borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFFEF4444)),),),),
-                        const SizedBox(height: 20),SizedBox(width: double.infinity,height: 52,
-                        child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const 
-                        Color(0xFFEF4444),shape: RoundedRectangleBorder(borderRadius: 
-                        BorderRadius.circular(16)),elevation: 0,),onPressed: () => _handleAccountDeletion(_emailController.text),
-                        child: Text(buttonText,style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: 
-                        FontWeight.bold),),),),],),),),);}}
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      ],
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          langProvider.changeLanguage(newValue);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // 4. ВАЛЮТАНЫ АЛМАШТЫРУУ БӨЛҮГҮ
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E252B),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF2D3742)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      selectCurrencyText,
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
+                      ),DropdownButton(value: _selectedCurrency,dropdownColor: const Color(0xFF1E252B),
+                      underline: const SizedBox(),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, 
+                      fontWeight: FontWeight.w600),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                      items: const [DropdownMenuItem(value: 'RUB', 
+                      child: Text('Рубль (₽)')),DropdownMenuItem(value: 'USD', 
+                      child: Text('Доллар (\$)')),DropdownMenuItem(value: 'KGS', 
+                      child: Text('Сом (с)')),DropdownMenuItem(value: 'EUR', 
+                      child: Text('Евро (€)')),],onChanged: (String? newValue) {if (newValue != null) {_updateCurrency(newValue);}},),],),),
+                      const SizedBox(height: 32),
+                      // 5. АККАУНТТУ ӨЧҮРҮҮ БӨЛҮГҮ
+                      Text(deleteDesc,
+                      style: const TextStyle(color: Color(0xFF94A3B8), 
+                      fontSize: 13, height: 1.4),textAlign: TextAlign.center,),
+                      const SizedBox(height: 16),TextField(controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      textInputAction: TextInputAction.done,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(hintText: hintText,
+                      hintStyle: const TextStyle(color: Color(0xFF64748B), 
+                      fontSize: 15),prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF64748B)),
+                      filled: true,fillColor: const Color(0xFF1E252B),enabledBorder: OutlineInputBorder(borderRadius: 
+                      BorderRadius.circular(16),borderSide: const BorderSide(color: Color(0xFF2D3742)),),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFEF4444)),),),),
+                      const SizedBox(height: 20),
+                      // Ырастоо жана өчүрүү баскычы
+                      SizedBox(width: double.infinity,height: 52,
+                      child: ElevatedButton(onPressed: _isLoading? null: () => _handleAccountDeletion(_emailController.text),style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444),
+                      disabledBackgroundColor: const Color(0xFF2D3742),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),),
+                      elevation: 0,),child: _isLoading? const SizedBox(width: 24,height: 24,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),): Text(buttonText,style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),),),),],),),),);}}
+
+
+ 

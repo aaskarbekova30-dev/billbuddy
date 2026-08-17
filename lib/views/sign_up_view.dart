@@ -27,31 +27,6 @@ class _SignUpViewState extends State<SignUpView> {
     super.dispose();
   }
 
-  // Көп тилдүү интерфейс маалыматтары бирдиктүү коопсуз базага жыйналды
-  String _fetchSecureText(String key, String lang) {
-    final Map<String, Map<String, String>> securePack = {
-      'ru': {
-        'title_signup': 'Создать аккаунт',
-        'hint_empty': 'Заполните все поля!',
-        'hint_match': 'Пароли не совпадают!',
-        'btn_signup': 'Зарегистрироваться',
-      },
-      'en': {
-        'title_signup': 'Create Account',
-        'hint_empty': 'Please fill all fields!',
-        'hint_match': 'Passwords do not match!',
-        'btn_signup': 'Sign Up',
-      },
-      'ky': {
-        'title_signup': 'Катталуу',
-        'hint_empty': 'Талааларды толтуруңуз!',
-        'hint_match': 'Сырсөздөр бири-бирине дал келген жок!',
-        'btn_signup': 'Катталуу',
-      }
-    };
-    return securePack[lang]?[key] ?? '';
-  }
-
   // Ката билдирүүлөрүн тилге жараша коопсуз таануу
   String _parseSystemError(String originalMessage, String lang) {
     final lowerMessage = originalMessage.toLowerCase();
@@ -83,7 +58,7 @@ class _SignUpViewState extends State<SignUpView> {
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_fetchSecureText('hint_empty', langProvider.currentLang)),
+          content: Text(langProvider.translate('hint_empty')),
           backgroundColor: const Color(0xFFFB7185), // Жумшак кызыл
         ),
       );
@@ -93,7 +68,7 @@ class _SignUpViewState extends State<SignUpView> {
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_fetchSecureText('hint_match', langProvider.currentLang)),
+          content: Text(langProvider.translate('hint_match')),
           backgroundColor: const Color(0xFFFB7185),
         ),
       );
@@ -169,7 +144,7 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _fetchSecureText('title_signup', currentLang),
+                    langProvider.translate('title_signup'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white, 
@@ -216,7 +191,7 @@ class _SignUpViewState extends State<SignUpView> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              _fetchSecureText('btn_signup', currentLang),
+                              langProvider.translate('btn_signup'),
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Color(0xFF12161A), 

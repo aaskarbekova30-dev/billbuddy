@@ -18,7 +18,7 @@ class _HomeViewState extends State<HomeView> {
     _refreshData();
   }
 
-  // 🌟 Экран ачылганда базадан баардык маалыматтарды жаңылап жүктөйт
+  // Экран ачылганда базадан баардык маалыматтарды жаңылап жүктөйт
   void _refreshData() {
     context.read<LedgerManagerBloc>().add(LoadExpenses());
   }
@@ -49,7 +49,7 @@ class _HomeViewState extends State<HomeView> {
               List<Map<String, dynamic>> allRecentExpenses = [];
               List<dynamic> subsList = [];
 
-              // 🌟 Блок Loaded абалында болгондо капчыктарды жана алардын ичиндеги чыгашаларды окуйбуз
+              // Блок Loaded абалында болгондо капчыктарды жана алардын ичиндеги чыгашаларды окуйбуз
               if (state is LedgerManagerLoaded) {
                 final List<dynamic> hubsList = state.hubs;
                 subsList = state.subscriptions; // Абонементтер
@@ -87,7 +87,7 @@ class _HomeViewState extends State<HomeView> {
                   children: [
                     const SizedBox(height: 10),
 
-                    // 💳 1. ЖАЛПЫ БАЛАНС КАРТОЧКАСЫ
+                    // 1. ЖАЛПЫ БАЛАНС КАРТОЧКАСЫ
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -112,7 +112,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // 🔔 2. ЖАКЫНКЫ ТӨЛӨМДӨР (АБОНЕМЕНТТЕР)
+                    // 2. ЖАКЫНКЫ ТӨЛӨМДӨР (АБОНЕМЕНТТЕР)
                     Text(
                       upcomingSubTitle,
                       style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -181,7 +181,7 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     const SizedBox(height: 24),
 
-                    // 📊 3. АКЫРКЫ ЧЫГЫШАЛАР БӨЛҮМҮ (Капчыктардагы чыныгы чыгашалар ушул жерге чыгат!)
+                    // 3. АКЫРКЫ ЧЫГЫШАЛАР БӨЛҮМҮ (Капчыктардагы чыныгы чыгашалар ушул жерге чыгат!)
                     Text(
                       recentExpensesTitle,
                       style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),

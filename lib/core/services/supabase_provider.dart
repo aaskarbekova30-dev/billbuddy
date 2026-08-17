@@ -145,10 +145,6 @@ class SupabaseProvider with ChangeNotifier {
         if (user != null) 'user_id': user.id,
       });
 
-
-
-
-
       notifyListeners();
     } catch (e) {
       debugPrint('Supabase чыгаша кошууда ката: $e');
@@ -164,10 +160,15 @@ class SupabaseProvider with ChangeNotifier {
     }
   }
 
-  void addSubscription({required String title, required double amount, required String groupName}) {}
-    // АВТОРИЗАЦИЯ ФУНКЦИЯЛАРЫ
+  void addSubscription({required String title, required double amount, required String groupName}) {
+    // Бул жерге келечекте жазылууларды кошуу логикасын жазсаңыз болот
+  }
 
-  // Электрондук почта жана пароль аркылуу кирүү
+  // ==========================================
+  // АВТОРИЗАЦИЯ ФУНКЦИЯЛАРЫ
+  // ==========================================
+
+  // Электрондук почта жана пароль аркылуу кирүү (Войти)
   Future<bool> signIn(String email, String password) async {
     _isLoading = true;
     notifyListeners();
@@ -187,10 +188,94 @@ class SupabaseProvider with ChangeNotifier {
     }
   }
 
-  // Тиркемеден чыгуу
+  // Электрондук почта, пароль жана колдонуучунун аты менен катталуу (Регистрация)
+  Future<bool> signUp(String email, String password, String username) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      // Supabase'де аккаунт ачуу
+      final AuthResponse response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': username}, // Колдонуучунун атын метаберилиш катары сактайбыз
+      );
+
+      // Эгер катталуу ийгиликтүү болсо жана колдонуучу жаралса, профилин базага да жазабыз
+      if (response.user != null) {
+        await _supabase.from('profiles').upsert({
+          'id': response.user!.id,
+          'username': username,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        _userName = username;
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint('Supabase катталууда ката: $e');
+      rethrow;
+    }
+  }
+
+  // Сырсөздү унутуп калганда электрондук почтага шилтеме жөнөтүү (Восстановление пароля)
+  Future<void> resetPassword(String email) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        // Тиркемеңиздин deep link шилтемесин көрсөтүңүз, бул колдонуучуну кайра тиркемеге кайтарат
+        redirectTo: 'io.supabase.billbuddy://login-callback', 
+      );
+    } catch (e) {
+      debugPrint('Supabase сырсөздү калыбына келтирүүдө ката: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+    // АККАУНТТУ ТОЛУГУ МЕНЕН ӨЧҮРҮҮ ФУНКЦИЯСЫ
+  Future<bool> deleteAccount(String confirmedEmail) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception('Колдонуучу табылган жок!');
+    }
+
+    // Колдонуучу жазган Email менен анын аккаунтунун Email'ин салыштырып текшеребиз
+    if (user.email != confirmedEmail) {
+      throw Exception('Электрондук почта туура эмес киргизилди!');
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Жогоруда Supabase'де түзгөн 'delete_current_user' функциябызды (RPC) чакырабыз
+      await _supabase.rpc('delete_current_user');
+      
+      // Ийгиликтүү өчкөндөн кийин жергиликтүү сессияны тазалайбыз
+      await _supabase.auth.signOut();
+      
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint('Аккаунтту өчүрүүдө ката кетти: $e');
+      rethrow;
+    }
+  }
+
+
+  // Тиркемеден чыгуу (Выйти)
   Future<void> signOut() async {
     await _supabase.auth.signOut();
     notifyListeners();
   }
-
 }

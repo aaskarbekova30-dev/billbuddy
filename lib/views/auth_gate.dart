@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'sign_in_view.dart';            
+import 'package:billbuddy/views/sign_in_view.dart';
 import 'main_view.dart';               
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});

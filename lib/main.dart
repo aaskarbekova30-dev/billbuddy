@@ -58,25 +58,27 @@ void main() async {
       child: const BillBuddyApp(),
     ),
   );
-} // 🌟 ОҢДОЛДУ: main() функциясынын жабылуу кашаасы өз ордуна келди
+} // main() функциясынын жабылуу кашаасы өз ордуна келди
 
 
 class BillBuddyApp extends StatelessWidget {
   const BillBuddyApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    // 🌟 ОҢДОЛДУ: Бул жердеги кайталанган туура эмес Блок провайдери алып салынды. 
-    // Эми тиркеме өйдөдө жарыяланган негизги Блокту түз жана катасыз угат.
-    return MaterialApp(
-      title: 'BillBuddy',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Roboto', 
-        useMaterial3: true,
-        brightness: Brightness.dark, 
-      ),
-      home: const AuthGate(),
-    );
-  }
+ @override
+Widget build(BuildContext context) {
+  return MaterialApp(
+    title: 'BillBuddy',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      fontFamily: 'Roboto', 
+      useMaterial3: true,
+      brightness: Brightness.dark, 
+    ),
+    home: const AuthGate(),
+    // БУЛ ЖЕРГЕ МАРШРУТТАРДЫ КОШУҢУЗ:
+    routes: {
+      '/auth': (context) => const AuthGate(), // же сиздин кирүү экраныңыздын классы (мис: SignInScreen())
+    },
+  );
+}
 }

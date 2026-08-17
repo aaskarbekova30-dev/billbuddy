@@ -90,7 +90,50 @@ class AppStrings {
 'select_category_lbl': 'Категорияны тандаңыз:',
 'btn_add': 'Кошуу',
 'no_wallets': 'Капчыктар азырынча жок',
-    },
+"mon": "Дш",
+  "tue": "Шш",
+  "wed": "Шр",
+  "thu": "Бш",
+  "fri": "Жм",
+  "sat": "Иш",
+  "sun": "Жш",
+  'every_month_day': 'Ар бир айдын {day}-сы',
+  'login_title': 'Тиркемеге кирүү',
+'password_hint': 'Пароль',
+'login_btn': 'Кирүү',
+'no_account': 'Аккаунтуңуз жокпу? ',
+'register_now': 'Катталуу',
+'title_login': 'Тиркемеге кирүү',
+'hint_email': 'Email дарек',
+'hint_pass': 'Сырсөз',
+'hint_empty_email': 'Email дарегиңизди жазыңыз!',
+'hint_empty_pass': 'Пароль кеминде 6 тамгадан турушу керек!',
+'btn_login': 'Кирүү',
+'success_msg': 'Ийгиликтүү кирдиңиз!',
+'error_msg': 'Ката: Почта же пароль туура эмес!',
+'title_register': 'Жаңы аккаунт түзүү',
+'hint_name': 'Колдонуучунун аты',
+'hint_empty_name': 'Атыңызды киргизиңиз!',
+'btn_register': 'Катталуу',
+'have_account': 'Аккаунтуңуз барбы? ',
+'btn_login_link': 'Кирүү',
+'title_signup': 'Катталуу',
+        'hint_empty': 'Талааларды толтуруңуз!',
+        'hint_match': 'Сырсөздөр бири-бирине дал келген жок!',
+        'btn_signup': 'Катталуу',
+        'link_forgot_pass': 'Сырсөздү унуттуңузбу?',
+    'txt_no_account': 'Аккаунтуңуз жокпу? ',
+    'link_register': 'Катталуу',
+    'error_invalid_credentials': 'Электрондук почта же сырсөз туура эмес. Кайра текшерип көрүңүз.',
+    'error_network': 'Интернет байланышы жок. Тармакты текшериңиз.',
+    'error_unknown': 'Күтүлбөгөн ката кетти. Кийинчерээк кайра аракет кылып көрүңүз.',
+    'delete_error_email': 'Ката: Электрондук почта туура эмес жазылды!',
+    'delete_dialog_title': 'Кепилдик жана Ырастоо',
+    'delete_dialog_content': 'Биз сиздин купуялуулугуңузду сыйлайбыз. "Өчүрүүнү ырастоо" баскычын басканда, сиздин каттоо эсебиңиз жана бардык жеке маалыматтарыңыз Supabase серверинен ДАРОО жана БИРОТОЛО өчүрүлөт. Бул аракетти артка кайтаруу мүмкүн эмес!',
+    'delete_btn_cancel': 'Жокко чыгаруу',
+    'delete_btn_confirm': 'Өчүрүүнү ырастоо',
+    'delete_success_msg': 'Каттоо эсебиңиз жана бардык маалыматтарыңыз ийгиликтүү өчүрүлдү.',
+},
     'ru': {
       'balance_title': 'ОБЩИЙ БАЛАНС',
       'recent_expenses': 'Последние расходы',
@@ -180,7 +223,52 @@ class AppStrings {
 'hint_wallet_limit': 'Лимит / Сумма',
 'select_category_lbl': 'Выберите категорию:',
 'btn_add': 'Добавить',
-    },
+  "mon": "Пн",
+  "tue": "Вт",
+  "wed": "Ср",
+  "thu": "Чт",
+  "fri": "Пт",
+  "sat": "Сб",
+  "sun": "Вс",
+  'every_month_day': 'Каждое {day}-е число',
+  'login_title': 'Вход в приложение',
+'password_hint': 'Пароль',
+'login_btn': 'Войти',
+'no_account': 'Нет аккаунта? ',
+'register_now': 'Зарегистрироваться',
+'title_login': 'Вход в приложение',
+'hint_email': 'Электронная почта',
+'hint_pass': 'Пароль',
+'hint_empty_email': 'Введите ваш Email!',
+'hint_empty_pass': 'Пароль должен быть не менее 6 символов!',
+'btn_login': 'Войти',
+'success_msg': 'Успешно вошли!',
+'error_msg': 'Ошибка: Почта или пароль неверны!',
+'title_register': 'Создание аккаунта',
+'hint_name': 'Имя пользователя',
+'hint_empty_name': 'Введите ваше имя!',
+'btn_register': 'Создать аккаунт',
+'have_account': 'Уже есть аккаунт? ',
+'btn_login_link': 'Войти',
+'title_signup': 'Создать аккаунт',
+        'hint_empty': 'Заполните все поля!',
+        'hint_match': 'Пароли не совпадают!',
+        'btn_signup': 'Зарегистрироваться',
+        'link_forgot_pass': 'Забыли пароль?',
+    'txt_no_account': 'Нет аккаунта? ',
+    'link_register': 'Зарегистрироваться',
+    'error_invalid_credentials': 'Неверный email или пароль. Пожалуйста, проверьте введённые данные.',
+    'error_network': 'Нет соединения с интернетом. Проверьте подключение.',
+    'error_unknown': 'Произошла ошибка. Пожалуйста, попробуйте позже.',
+    'delete_error_email': 'Ошибка: Электронная почта введена неверно!',
+    'delete_dialog_title': 'Гарантия и Подтверждение',
+    'delete_dialog_content': 'Мы уважаем вашу конфиденциальность. При нажатии на кнопку "Подтвердить удаление", ваша учетная запись и все личные данные будут НЕМЕДЛЕННО и БЕЗВОЗВРАТНО удалены с сервера Supabase. Это действие нельзя отменить!',
+    'delete_btn_cancel': 'Отмена',
+    'delete_btn_confirm': 'Подтвердить удаление',
+    'delete_success_msg': 'Ваш аккаунт и все данные успешно удалены.',
+    'delete_you_entered': 'Вы ввели:',
+  'delete_registered_email': 'Зарегистрирован:',
+},
     'en': {
       'balance_title': 'TOTAL BALANCE',
       'recent_expenses': 'Recent Expenses',
@@ -258,6 +346,43 @@ class AppStrings {
 'no_expenses_yet': 'There are no expenses in this wallet yet',
 'expense_list_lbl': 'Expense list:',
 'no_wallets': 'No wallets yet',
+// 'en' (English) блогунун ичине кошуңуз:
+'every_month_day': 'Every {day} of the month',
+'login_title': 'Sign in to application',
+'password_hint': 'Password',
+'login_btn': 'Sign In',
+'no_account': "Don't have an account? ",
+'register_now': 'Register now',
+'title_login': 'Sign In',
+'hint_email': 'Email Address',
+'hint_pass': 'Password',
+'hint_empty_email': 'Please enter your Email!',
+'hint_empty_pass': 'Password must be at least 6 characters!',
+'btn_login': 'Sign In',
+'success_msg': 'Successfully logged in!',
+'error_msg': 'Error: Invalid Email or password!',
+'title_register': 'Create an Account',
+'hint_name': 'Username',
+'hint_empty_name': 'Please enter your name!',
+'btn_register': 'Sign Up',
+'have_account': 'Already have an account? ',
+'btn_login_link': 'Sign In',
+'title_signup': 'Create Account',
+        'hint_empty': 'Please fill all fields!',
+        'hint_match': 'Passwords do not match!',
+        'btn_signup': 'Sign Up',
+        'link_forgot_pass': 'Forgot password?',
+    'txt_no_account': "Don't have an account? ",
+    'link_register': 'Sign up',
+    'error_invalid_credentials': 'Invalid email or password. Please check your credentials.',
+    'error_network': 'No internet connection. Please check your network.',
+    'error_unknown': 'An unexpected error occurred. Please try again later.',
+    'delete_error_email': 'Error: The email address was entered incorrectly!',
+    'delete_dialog_title': 'Guarantee & Confirmation',
+    'delete_dialog_content': 'We respect your privacy. When you click the "Confirm Delete" button, your account and all personal data will be IMMEDIATELY and PERMANENTLY deleted from the Supabase server. This action cannot be undone!',
+    'delete_btn_cancel': 'Cancel',
+    'delete_btn_confirm': 'Confirm Delete',
+    'delete_success_msg': 'Your account and all data have been successfully deleted.',
     },
   };
 
@@ -265,3 +390,123 @@ class AppStrings {
     return localizedValues[currentLang] ?? localizedValues['ky']!;
   }
 }
+// lib/config/app_strings.dart
+
+class AppString {
+  // ==========================================
+  // --- РУССКИЙ ЯЗЫК (ru) ---
+  // ==========================================
+  static const Map<String, String> ru = {
+    'title_login': 'Вход в приложение',
+    'hint_email': 'Электронная почта',
+    'hint_pass': 'Пароль',
+    'hint_empty_email': 'Введите ваш Email!',
+    'hint_empty_pass': 'Введите пароль!',
+    'btn_login': 'Войти',
+    'link_forgot_pass': 'Забыли пароль?',
+    'msg_reset_sent': 'Ссылка для сброса пароля отправлена на вашу почту!',
+    'txt_no_account': 'Нет аккаунта? ',
+    'link_register': 'Регистрация',
+    'title_account_settings': 'Настройки аккаунта',
+    'hint_confirm_email': 'Введите Email для подтверждения',
+    
+    // Кирүүдөгү каталар (Орусча):
+    'error_invalid_credentials': 'Неверный email или пароль. Пожалуйста, проверьте введённые данные.',
+    'error_network': 'Нет соединения с интернетом. Проверьте подключение.',
+    'error_unknown': 'Произошла ошибка. Пожалуйста, попробуйте позже.',
+
+    // Аккаунтту өчүрүү (Орусча):
+    'delete_error_email': 'Ошибка: Электронная почта введена неверно!',
+    'delete_dialog_title': 'Гарантия и Подтверждение',
+    'delete_dialog_content': 'Мы уважаем вашу конфиденциальность. При нажатии на кнопку "Подтвердить удаление", ваша учетная запись и все личные данные будут НЕМЕДЛЕННО и БЕЗВОЗВРАТНО удалены с сервера Supabase. Это действие нельзя отменить!',
+    'delete_btn_cancel': 'Отмена',
+    'delete_btn_confirm': 'Подтвердить удаление',
+    'delete_success_msg': 'Ваш аккаунт и все данные успешно удалены.',
+      'delete_you_entered': 'Вы ввели:',
+  'delete_registered_email': 'Зарегистрирован:',
+
+  };
+
+  // ==========================================
+  // --- КЫРГЫЗ ТИЛИ (kg) ---
+  // ==========================================
+  static const Map<String, String> kg = {
+    'title_login': 'Тиркемеге кирүү',
+    'hint_email': 'Электрондук почта',
+    'hint_pass': 'Сырсөз',
+    'hint_empty_email': 'Email дарегиңизди жазыңыз!',
+    'hint_empty_pass': 'Сырсөздү жазыңыз!',
+    'btn_login': 'Кирүү',
+    'link_forgot_pass': 'Сырсөздү унутуп койдуңузбу?',
+    'msg_reset_sent': 'Сырсөздү калыбына келтирүү шилтемеси почтаңызга жөнөтүлдү!',
+    'txt_no_account': 'Аккаунтуңуз жокпу? ',
+    'link_register': 'Катталуу',
+    'title_account_settings': 'Аккаунт жөндөөлөрү',
+    'hint_confirm_email': 'Тастыктоо үчүн Email дарегиңизди киргизиңиз',
+
+    // Кирүүдөгү каталар (Кыргызча):
+    'error_invalid_credentials': 'Электрондук почта же сырсөз туура эмес. Кайра текшерип көрүңүз.',
+    'error_network': 'Интернет байланышы жок. Тармакты текшериңиз.',
+    'error_unknown': 'Күтүлбөгөн ката кетти. Кийинчерээк кайра аракет кылып көрүңүз.',
+
+    // Аккаунтту өчүрүү (Кыргызча):
+    'delete_error_email': 'Ката: Электрондук почта туура эмес жазылды!',
+    'delete_dialog_title': 'Кепилдик жана Ырастоо',
+    'delete_dialog_content': 'Биз сиздин купуялуулугуңузду сыйлайбыз. "Өчүрүүнү ырастоо" баскычын басканда, сиздин каттоо эсебиңиз жана бардык жеке маалыматтарыңыз Supabase серверинен ДАРОО жана БИРОТОЛО өчүрүлөт. Бул аракетти артка кайтаруу мүмкүн эмес!',
+    'delete_btn_cancel': 'Жокко чыгаруу',
+    'delete_btn_confirm': 'Өчүрүүнү ырастоо',
+    'delete_success_msg': 'Каттоо эсебиңиз жана бардык маалыматтарыңыз ийгиликтүү өчүрүлдү.',
+      'delete_you_entered': 'Сиз жаздыңыз:',
+  'delete_registered_email': 'Катталган:',
+
+  };
+
+  // ==========================================
+  // --- АНГЛИЙСКИЙ ЯЗЫК (en) ---
+  // ==========================================
+  static const Map<String, String> en = {
+    'title_login': 'Sign In',
+    'hint_email': 'Email Address',
+    'hint_pass': 'Password',
+    'hint_empty_email': 'Please enter your Email!',
+    'hint_empty_pass': 'Please enter your password!',
+    'btn_login': 'Sign In',
+    'link_forgot_pass': 'Forgot Password?',
+    'msg_reset_sent': 'Password reset link has been sent to your email!',
+    'txt_no_account': 'Don\'t have an account? ',
+    'link_register': 'Sign Up',
+    'title_account_settings': 'Account Settings',
+    'hint_confirm_email': 'Enter Email to confirm',
+
+    // Кирүүдөгү каталар (Англисче):
+    'error_invalid_credentials': 'Invalid email or password. Please check your credentials.',
+    'error_network': 'No internet connection. Please check your network.',
+    'error_unknown': 'An unexpected error occurred. Please try again later.',
+
+    // Аккаунтту өчүрүү (Англисче):
+    'delete_error_email': 'Error: The email address was entered incorrectly!',
+    'delete_dialog_title': 'Guarantee & Confirmation',
+    'delete_dialog_content': 'We respect your privacy. When you click the "Confirm Delete" button, your account and all personal data will be IMMEDIATELY and PERMANENTLY deleted from the Supabase server. This action cannot be undone!',
+    'delete_btn_cancel': 'Cancel',
+    'delete_btn_confirm': 'Confirm Delete',
+    'delete_success_msg': 'Your account and all data have been successfully deleted.',
+      'delete_you_entered': 'You entered:',
+  'delete_registered_email': 'Registered:',
+
+  };
+
+  // Тилди аныктап кайтаруучу функция
+  static Map<String, String> getTranslation(String langCode) {
+    switch (langCode) {
+      case 'kg':
+        return kg;
+      case 'en':
+        return en;
+      case 'ru':
+      default:
+        return ru;
+    }
+  }
+}
+
+

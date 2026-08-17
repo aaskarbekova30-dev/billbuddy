@@ -74,7 +74,7 @@ class _LogChargeViewState extends State<LogChargeView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(successMsg),
-        backgroundColor: const Color(0xFF4ADE80), // 🌟 Ийгиликтүү кошулду (Жалбыз жашыл)
+        backgroundColor: const Color(0xFF4ADE80), 
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
@@ -104,12 +104,12 @@ class _LogChargeViewState extends State<LogChargeView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF12161A), // 🌟 Премиум кочкул боз фон
+      backgroundColor: const Color(0xFF12161A), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white), // 🌟 Заманбап иконка
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white), 
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -130,7 +130,7 @@ class _LogChargeViewState extends State<LogChargeView> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E252B), // 🌟 Жумшак боз контейнер фону
+              color: const Color(0xFF1E252B),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -149,12 +149,12 @@ class _LogChargeViewState extends State<LogChargeView> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4ADE80).withValues(alpha: 0.12), // 🌟 Жаңы нео-минт тунук түсү
+                          color: const Color(0xFF4ADE80).withValues(alpha: 0.12), 
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.receipt_long_rounded,
-                          color: Color(0xFF4ADE80), // 🌟 Жалбыз жашыл
+                          color: Color(0xFF4ADE80), 
                           size: 24,
                         ),
                       ),

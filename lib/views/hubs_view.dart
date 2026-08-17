@@ -30,10 +30,10 @@ class _HubsViewState extends State<HubsView> {
     super.dispose();
   }
 
-  // 🌟 ОҢДОЛДУ: Категориялардын базалык атын котормо ачкычына айландыруучу функция
+  // Категориялардын базалык атын котормо ачкычына айландыруучу функция
 
   void _showCreateHubBottomSheet(BuildContext parentContext) {
-    // 🌟 ОҢДОЛДУ: Тил провайдерин негизги контексттен ишенимдүү алабыз
+    // Тил провайдерин негизги контексттен ишенимдүү алабыз
     final langProvider = Provider.of<LanguageProvider>(parentContext, listen: false);
 
     showModalBottomSheet(
@@ -72,7 +72,7 @@ class _HubsViewState extends State<HubsView> {
               ),
               const SizedBox(height: 10),
               
-              // 🌟 ОҢДОЛДУ: Категориялардын аттары эми тилге карап автоматтык түрдө которулат!
+              // Категориялардын аттары эми тилге карап автоматтык түрдө которулат!
               StatefulBuilder(
                 builder: (context, setModalState) {
                   return Wrap(

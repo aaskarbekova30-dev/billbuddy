@@ -32,19 +32,32 @@ class _TimelineViewState extends State<TimelineView> {
     _daysInMonth = List.generate(lastDay, (index) => DateTime(_now.year, _now.month, index + 1));
   }
 
+  // 🌟 ОПТИМИЗАЦИЯ: Безопасный асинхронный/динамический перевод дней недели
+  String _getWeekdayName(int weekday, LanguageProvider langProvider) {
+    switch (weekday) {
+      case DateTime.monday:
+        return langProvider.translate('mon').isEmpty ? "Пн" : langProvider.translate('mon');
+      case DateTime.tuesday:
+        return langProvider.translate('tue').isEmpty ? "Вт" : langProvider.translate('tue');
+      case DateTime.wednesday:
+        return langProvider.translate('wed').isEmpty ? "Ср" : langProvider.translate('wed');
+      case DateTime.thursday:
+        return langProvider.translate('thu').isEmpty ? "Чт" : langProvider.translate('thu');
+      case DateTime.friday:
+        return langProvider.translate('fri').isEmpty ? "Пт" : langProvider.translate('fri');
+      case DateTime.saturday:
+        return langProvider.translate('sat').isEmpty ? "Сб" : langProvider.translate('sat');
+      case DateTime.sunday:
+        return langProvider.translate('sun').isEmpty ? "Вс" : langProvider.translate('sun');
+      default:
+        return "";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Слушаем провайдер языка. При его изменении build вызовется автоматически
     final langProvider = Provider.of<LanguageProvider>(context);
-
-    final List<String> weekdayNames = [
-      langProvider.translate('mon').isEmpty ? "Пн" : langProvider.translate('mon'),
-      langProvider.translate('tue').isEmpty ? "Вт" : langProvider.translate('tue'),
-      langProvider.translate('wed').isEmpty ? "Ср" : langProvider.translate('wed'),
-      langProvider.translate('thu').isEmpty ? "Чт" : langProvider.translate('thu'),
-      langProvider.translate('fri').isEmpty ? "Пт" : langProvider.translate('fri'),
-      langProvider.translate('sat').isEmpty ? "Сб" : langProvider.translate('sat'),
-      langProvider.translate('sun').isEmpty ? "Вс" : langProvider.translate('sun'),
-    ];
 
     final String calendarTitle = langProvider.translate('calendar_title').isEmpty ? 'Хроника платежей' : langProvider.translate('calendar_title');
     final String calendarSubtitle = langProvider.translate('calendar_subtitle').isEmpty ? 'График предстоящих событий' : langProvider.translate('calendar_subtitle');
@@ -75,11 +88,26 @@ class _TimelineViewState extends State<TimelineView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(calendarTitle, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)), const SizedBox(height: 4), Text(calendarSubtitle, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13))])),
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: const Color(0xFF1E252B), borderRadius: BorderRadius.circular(10)), child: Text(monthAugust, style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 13))),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start, 
+                      children: [
+                        Text(calendarTitle, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)), 
+                        const SizedBox(height: 4), 
+                        Text(calendarSubtitle, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13))
+                      ]
+                    )
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+                    decoration: BoxDecoration(color: const Color(0xFF1E252B), borderRadius: BorderRadius.circular(10)), 
+                    child: Text(monthAugust, style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 13))
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
+              
+              // Горизонтальный календарь
               SizedBox(
                 height: 85,
                 child: ListView.builder(
@@ -89,10 +117,18 @@ class _TimelineViewState extends State<TimelineView> {
                   itemCount: _daysInMonth.length,
                   itemBuilder: (context, index) {
                     final DateTime date = _daysInMonth[index];
+                    // Переводим название дня "на лету" асинхронно-безопасным методом
+                    final String dayName = _getWeekdayName(date.weekday, langProvider);
+
                     return GestureDetector(
                       key: ValueKey('btn_${date.day}'),
                       onTap: () => setState(() { _selectedDay = date.day; }),
-                      child: _buildCalendarDay(weekdayNames[date.weekday - 1], date.day.toString(), _selectedDay == date.day, key: ValueKey(date.toIso8601String())),
+                      child: _buildCalendarDay(
+                        dayName, 
+                        date.day.toString(), 
+                        _selectedDay == date.day, 
+                        key: ValueKey(date.toIso8601String())
+                      ),
                     );
                   },
                 ),
@@ -111,9 +147,8 @@ class _TimelineViewState extends State<TimelineView> {
 
                       List<dynamic> subsList = [];
                       
-                      // 🌟 ОҢДОЛДУ: Эми жаңы бирдиктүү LedgerManagerLoaded стейтин угабыз
                       if (state is LedgerManagerLoaded) {
-                        subsList = state.subscriptions; // Абонементтерди ушул жерден түз тартабыз
+                        subsList = state.subscriptions; 
                       }
 
                       if (subsList.isEmpty) {
@@ -128,15 +163,12 @@ class _TimelineViewState extends State<TimelineView> {
                         itemBuilder: (context, index) {
                           final item = subsList[index];
                           
-                          // Жаңы таза subscriptions таблицасынын талаалары (name, amount, date)
                           final String id = item['id'].toString();
                           final String title = item['name'] ?? 'Подписка';
                           final double amount = (item['amount'] ?? 0.0).toDouble();
                           
-                          int subDay = 15;
                           if (item['date'] != null) {
                             try {
-                              subDay = DateTime.parse(item['date'].toString()).day;
                             } catch (_) {}
                           }
 
@@ -146,21 +178,72 @@ class _TimelineViewState extends State<TimelineView> {
                             background: Container(color: Colors.redAccent, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 28)),
                             onDismissed: (direction) {
                               context.read<LedgerManagerBloc>().add(DeleteSubscriptionEvent(id: int.parse(id)));
-                              
-                              final String deletedWord = langProvider.translate('deleted_msg').isEmpty ? 'өчүрүлдү' : langProvider.translate('deleted_msg');
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$title $deletedWord"), backgroundColor: Colors.redAccent));
                             },
-                            child: _buildScheduleRow(
-                              title, 
-                              "Каждое $subDay-е число", 
-                              "-$amount RUB", 
-                              title.toLowerCase().contains('spotify') 
-                                  ? Icons.notifications_active_rounded 
-                                  : (title.toLowerCase().contains('ддх') || title.toLowerCase().contains('фитнес')
-                                      ? Icons.fitness_center_rounded
-                                      : (title.toLowerCase().contains('medium') ? Icons.book_rounded : Icons.card_membership_rounded)), 
-                              subDay == DateTime.now().day,
-                            ),
+                            child: ListTile(
+  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  title: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        title, 
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 4),
+           Builder(
+        builder: (context) {
+          // 1. Тил провайдерин чакырабыз
+          final langProvider = Provider.of<LanguageProvider>(context);
+
+          // Базадан келген датаны текстке айландыруу
+          final rawDate = (item['day'] ?? item['date'] ?? '').toString();
+          String displayDay = rawDate;
+
+          // Датадан жыл менен айды алып салып, күндү гана калтыруу
+          if (rawDate.contains('-')) {
+            try {
+              final parsedDate = DateTime.parse(rawDate);
+              displayDay = parsedDate.day.toString();
+            } catch (_) {
+              displayDay = rawDate.split('-').last;
+            }
+          }
+
+          // 2. Локализация файлынан ('every_month_day') ачкычын окуйбуз
+          // Эгер котормо табылбаса, дефолт катары кыргызча форматты коёбуз
+          String localizedTemplate = langProvider.translate('every_month_day').isEmpty
+              ? 'Ар бир айдын {day}-сы'
+              : langProvider.translate('every_month_day');
+
+          // 3. Шаблондун ичиндеги {day} деген жазууну чыныгы күн (мис: 15 же 16) менен алмаштырабыз
+          String finalDisplayText = localizedTemplate.replaceAll('{day}', displayDay);
+
+          return Text(
+            finalDisplayText,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 13,
+            ),
+          );
+        },
+      ),
+
+    ],
+  ),
+  trailing: Text(
+    '$amount', 
+    style: const TextStyle(
+      color: Color(0xFF4ADE80),
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    ),
+  ),
+),
+
                           );
                         },
                       );
@@ -175,5 +258,14 @@ class _TimelineViewState extends State<TimelineView> {
     );
   }
 
-  Widget _buildCalendarDay(String dayName, String dayNumber, bool isActive, {Key? key}) {
-return Container(key: key, width: 55, margin: const EdgeInsets.only(right: 10), decoration: BoxDecoration(color: isActive ? const Color(0xFF4ADE80) : const Color(0xFF1E252B), borderRadius: BorderRadius.circular(16)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(dayName, style: TextStyle(color: isActive ? const Color(0xFF12161A) : const Color(0xFF94A3B8), fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500)), const SizedBox(height: 6), Text(dayNumber, style: TextStyle(color: isActive ? const Color(0xFF12161A) : Colors.white, fontSize: 16, fontWeight: FontWeight.bold))]));}Widget _buildScheduleRow(String title, String time, String amount, IconData iconData, bool isUrgent) {return Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), child: Row(children: [Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFF12161A), borderRadius: BorderRadius.circular(14)), child: Icon(iconData, color: isUrgent ? const Color(0xFFFB7185) : const Color(0xFF4ADE80), size: 20)), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)), const SizedBox(height: 3), Text(time, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12))])), Text(amount, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))]));}}
+  // Вспомогательный виджет для отрисовки элемента дня (добавьте ваш существующий или этот)
+  Widget _buildCalendarDay(String dayName, String dayNumber, bool isSelected, {Key? key}) {
+    return Container(
+      key: key,
+      width: 60,
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFF4ADE80) : const Color(0xFF1E252B),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Text(dayName, style: TextStyle(color: isSelected ? const Color(0xFF12161A) : const Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600)),const SizedBox(height: 6),Text(dayNumber, style: TextStyle(color: isSelected ? const Color(0xFF12161A) : Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),],),);}}
