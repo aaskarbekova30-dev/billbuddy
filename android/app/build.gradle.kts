@@ -26,15 +26,28 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // Релиз үчүн кол коюу ачкычын туташтыруу
-    signingConfigs {
+       signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String?
+            keyAlias = keystoreProperties["keyAlias"] as? String
+            keyPassword = keystoreProperties["keyPassword"] as? String
+            storeFile = (keystoreProperties["storeFile"] as? String)?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as? String
         }
     }
+
+        buildTypes {
+        getByName("release") {
+            // Релиздик ачкычты туташтыруу
+            signingConfig = signingConfigs.getByName("release")
+            
+            // ЖАҢЫ СИНТАКСИС (Катаны ушул жер оңдойт):
+            isMinifyEnabled = false
+            isShrinkResources = false
+            
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
 
     defaultConfig {
         applicationId = "com.appitcompany.billbuddy"

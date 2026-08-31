@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/services/language_provider.dart';
-import '../../core/services/supabase_provider.dart';
-import '../../config/app_strings.dart'; // Путь к вашему центральному файлу строк
+import 'package:supabase_flutter/supabase_flutter.dart'; // 1. Supabase кайра кошулду
+import '../core/services/language_provider.dart';
+import '../core/services/supabase_provider.dart'; // 2. Сиздин SupabaseProvider кошулду
 
 class UserAccountView extends StatefulWidget {
   const UserAccountView({super.key});
@@ -14,11 +13,21 @@ class UserAccountView extends StatefulWidget {
 
 class _UserAccountViewState extends State<UserAccountView> {
   final _emailController = TextEditingController();
-  final _nameController = TextEditingController(); // Добавлен контроллер из вашего dispose()
+  final _nameController = TextEditingController(); 
+  
+  // 3. Кайрадан Supabase кардары колдонулат
   final _supabase = Supabase.instance.client;
   
   bool _isLoading = false;
-  bool _isEmailValid = false; // Переменная для динамической блокировки кнопки
+  bool _isEmailValid = false;
+  String _currentUserEmail = ''; 
+
+  @override
+  void initState() {
+    super.initState();
+    // 4. Учурдагы колдонуучунун email'ин Supabase аркылуу бир жолу сактап алабыз
+    _currentUserEmail = _supabase.auth.currentUser?.email ?? '';
+  } 
 
   @override
   void dispose() {
@@ -27,23 +36,23 @@ class _UserAccountViewState extends State<UserAccountView> {
     super.dispose();
   }
 
-  // ПОЛНОЕ УДАЛЕНИЕ АККАУНТA БЕЗ СИСТЕМЫ ВСПЛЫВАЮЩИХ ОШИБОК
+  // АККАУНТТУ СУПАБЕЙС АРКЫЛУУ ТОЛУК ӨЧҮРҮҮ
   Future<void> _handleAccountDeletion(String enteredEmail) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
     final langProvider = Provider.of<LanguageProvider>(context, listen: false);
-    final String currentLang = langProvider.currentLang;
     final String cleanCurrentUserEmail = (user.email ?? '').trim().toLowerCase();
 
-    // Получаем сообщение об успешном удалении из локализации
-    final String successMsg = AppStrings.getTranslation(currentLang)['delete_success_msg'] ?? 
-        'Your account and all data have been successfully deleted.';
+    // Ийгиликтүү өчүрүү маалымдамасы
+    final String successMsg = langProvider.translate('delete_success_msg').isEmpty
+        ? 'Your account and all data have been successfully deleted.'
+        : langProvider.translate('delete_success_msg');
 
     try {
       setState(() => _isLoading = true);
       
-      // Вызываем метод удаления из SupabaseProvider
+      // 5. Сиздин SupabaseProvider аркылуу аккаунтту өчүрүү методун чакырабыз
       final authProvider = Provider.of<SupabaseProvider>(context, listen: false);
       await authProvider.deleteAccount(cleanCurrentUserEmail); 
 
@@ -52,15 +61,16 @@ class _UserAccountViewState extends State<UserAccountView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(successMsg), backgroundColor: const Color(0xFF4ADE80)),
         );
-        // Возвращаем на экран авторизации
+        // Авторизация экранына кайтаруу
         // ignore: use_build_context_synchronously
         Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
       }
     } catch (e) {
       if (context.mounted) {
+        String errorText = 'Error: $e';
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: const Color(0xFFEF4444)),
+          SnackBar(content: Text(errorText), backgroundColor: const Color(0xFFEF4444)),
         );
       }
     } finally {
@@ -74,13 +84,13 @@ class _UserAccountViewState extends State<UserAccountView> {
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
 
-    // Локализация текстов через встроенный провайдер языка
+    // Локализация текстери
     String getTxt(String key, String defaultText) {
       final translated = langProvider.translate(key);
       return (translated.isEmpty || translated == key) ? defaultText : translated;
     }
 
-    // Получение строк из AppStrings
+    // Тексттер (Кайрадан Supabase деп алмаштырылды)
     final String deleteDesc = getTxt('delete_dialog_content', 'Удаление учетной записи выполняется в соответствии с политикой обработки данных. Введите свой Email для подтверждения. Все ваши личные данные будут навсегда удалены из базы данных Supabase.');
     final String hintText = getTxt('hint_confirm_email', 'Электронная почта (Email)');
     final String buttonText = getTxt('delete_btn_confirm', 'Запросить удаление аккаунта');
@@ -104,7 +114,8 @@ class _UserAccountViewState extends State<UserAccountView> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: 
+             CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
               
@@ -122,10 +133,8 @@ class _UserAccountViewState extends State<UserAccountView> {
                 style: const TextStyle(color: Colors.white),
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) {
-                  final currentUserEmail = _supabase.auth.currentUser?.email ?? '';
                   setState(() {
-                    // Кнопка станет активной, только если введенный текст полностью совпадает с Email пользователя
-                    _isEmailValid = value.trim().toLowerCase() == currentUserEmail.trim().toLowerCase();
+                    _isEmailValid = value.trim().toLowerCase() == _currentUserEmail.trim().toLowerCase();
                   });
                 },
                 decoration: InputDecoration(
@@ -140,26 +149,23 @@ class _UserAccountViewState extends State<UserAccountView> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    // Если email совпал, рамка подсвечивается зеленым, если в процессе ввода — красным/сером
                     borderSide: BorderSide(color: _isEmailValid ? const Color(0xFF4ADE80) : const Color(0xFFEF4444)),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // УМНАЯ БЛОКИРУЮЩАЯСЯ КНОПКА ПОДТВЕРЖДЕНИЯ
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    // Если email валиден — кнопка горит красным, если нет — она серая и неактивная
                     backgroundColor: _isEmailValid ? const Color(0xFFEF4444) : const Color(0xFF2D3742),
                     disabledBackgroundColor: const Color(0xFF2D3742),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  // Если идет загрузка или текст не совпал — кнопка физически блокируется (onPressed: null)
                   onPressed: (_isLoading || !_isEmailValid) 
                       ? null 
                       : () => _handleAccountDeletion(_emailController.text),

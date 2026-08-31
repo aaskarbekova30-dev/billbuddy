@@ -1,5 +1,6 @@
 import 'package:billbuddy/views/sign_up_view.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart' as g_auth;
 import 'package:provider/provider.dart'; 
 import '../../core/services/language_provider.dart';
 import '../../core/services/supabase_provider.dart'; 
@@ -17,6 +18,7 @@ class _SignInViewState extends State<SignInView> {
   final _passwordController = TextEditingController();
   
   bool _isObscure = true;
+  bool _isGoogleLoading = false; 
 
   @override
   void dispose() {
@@ -25,7 +27,80 @@ class _SignInViewState extends State<SignInView> {
     super.dispose();
   }
 
-  @override
+    // ТАЗА GOOGLE АВТОРИЗАЦИЯ ФУНКЦИЯСЫ (ТОЛУК ОҢДОЛГОН ВЕРСИЯСЫ 7.x)
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      setState(() => _isGoogleLoading = true);
+
+      // 1. Пакеттин жаңы синглтон объектисин чакыруу
+      final googleSignIn = g_auth.GoogleSignIn.instance;
+      await googleSignIn.initialize();
+      
+      // 2. БУЛ САП СӨЗСҮЗ БОЛУШУ КЕРЕК (Сизде өчүп калган сап):
+      final googleUser = await googleSignIn.authenticate(); 
+
+
+      // 3. Идентификациялык токенди алуу (idToken)
+      final googleAuth = googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      // 4. Жаңы 7.x версиясынын стандарты боюнча accessToken алуу:
+      final authorization = await googleUser.authorizationClient.authorizationForScopes(['email', 'profile']);
+      final accessToken = authorization?.accessToken;
+
+      if (idToken == null || accessToken == null) {
+        throw 'Google токендери табылган жок';
+      }
+
+      if (mounted) {
+        final authProvider = Provider.of<SupabaseProvider>(context, listen: false);
+        await authProvider.signInWithGoogle(
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+      }
+
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Ката кетти: $error"),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+      }
+    }
+  }
+
+
+  // EMAIL МЕНЕН КИРҮҮ ФУНКЦИЯСЫ
+  Future<void> _handleEmailSignIn() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final authProvider = Provider.of<SupabaseProvider>(context, listen: false);
+        
+        await authProvider.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+        
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Ката кетти: $error"),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
+      }
+    }
+  }
+    @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<SupabaseProvider>();
     final langProvider = Provider.of<LanguageProvider>(context);
@@ -35,6 +110,8 @@ class _SignInViewState extends State<SignInView> {
       final translated = langProvider.translate(key);
       return (translated.isEmpty || translated == key) ? defaultText : translated;
     }
+
+    final isGeneralLoading = authProvider.isLoading || _isGoogleLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFF12161A), 
@@ -82,6 +159,7 @@ class _SignInViewState extends State<SignInView> {
                       controller: _emailController,
                       style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.emailAddress,
+                      enabled: !isGeneralLoading,
                       decoration: InputDecoration(
                         border: InputBorder.none, 
                         hintText: getTxt('hint_email', 'Электрондук почта'),
@@ -109,6 +187,7 @@ class _SignInViewState extends State<SignInView> {
                       controller: _passwordController,
                       obscureText: _isObscure, 
                       style: const TextStyle(color: Colors.white),
+                      enabled: !isGeneralLoading,
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: getTxt('hint_pass', 'Сырсөз'),
@@ -135,12 +214,12 @@ class _SignInViewState extends State<SignInView> {
                       },
                     ),
                   ),
-                  
+                                    
                   // СЫРСӨЗДҮ УНУТТУҢУЗБУ?
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: authProvider.isLoading
+                      onPressed: isGeneralLoading
                           ? null
                           : () async {
                               final email = _emailController.text.trim();
@@ -156,112 +235,134 @@ class _SignInViewState extends State<SignInView> {
 
                               try {
                                 await authProvider.resetPassword(email);
-                                if (context.mounted) {
+                                if (mounted) {
+                                  // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(getTxt('msg_reset_sent', 'Ссылка для сброса пароля отправлена на вашу почту!')),
+                                      content: Text(getTxt('reset_success', 'Сырсөздү калыбына келтирүү шилтемеси почтаңызга жөнөтүлдү!')),
                                       backgroundColor: const Color(0xFF4ADE80),
                                     ),
                                   );
                                 }
                               } catch (e) {
-                                if (context.mounted) {
+                                if (mounted) {
+                                  // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Ошибка: ${e.toString()}'),
-                                      backgroundColor: const Color(0xFFFFB785),
+                                      content: Text("Ката: $e"),
+                                      backgroundColor: const Color(0xFFEF4444),
                                     ),
                                   );
                                 }
                               }
                             },
                       child: Text(
-                        getTxt('link_forgot_pass', 'Забыли пароль?'),
-                        style: const TextStyle(
-                          color: Color(0xFF4ADE80),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        getTxt('btn_forgot', 'Сырсөздү унутуп койдуңузбу?'),
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+
+                  // КИРҮҮ БАСКЫЧЫ (EMAIL)
+                  ElevatedButton(
+                    onPressed: isGeneralLoading ? null : _handleEmailSignIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4ADE80),
+                      foregroundColor: const Color(0xFF12161A),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: isGeneralLoading && !_isGoogleLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF12161A)),
+                          )
+                        : Text(
+                            getTxt('btn_login', 'Кирүү'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                  ),
                   const SizedBox(height: 24),
 
-                  // БАСКЫЧ: КИРҮҮ (SIGN IN)
-                  SizedBox(
-                    height: 52,
-                    child: Material( 
-                      color: Colors.transparent,
-                      child: InkWell(
+                  // ЖЕ БӨЛҮГҮ
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: Color(0xFF1E252B), thickness: 1)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          getTxt('txt_or', 'же'),
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                        ),
+                      ),
+                      const Expanded(child: Divider(color: Color(0xFF1E252B), thickness: 1)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // GOOGLE МЕНЕН КИРҮҮ БАСКЫЧЫ
+                  ElevatedButton.icon(
+                    onPressed: isGeneralLoading ? null : _handleGoogleSignIn,
+                    icon: _isGoogleLoading 
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.g_mobiledata, size: 30),
+                    label: Text(getTxt('btn_google', 'Google менен кирүү')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E252B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        onTap: () async {
-                          debugPrint("Кнопка 'Войти' была нажата!");
-                          
-                          if (authProvider.isLoading) {
-                            debugPrint("Кнопка заблокирована: идет загрузка (isLoading = true)");
-                            return;
-                          }
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-                          if (_formKey.currentState!.validate()) {
-                            debugPrint("Валидация прошла успешно. Попытка входа...");
-                            try {
-                              final success = await authProvider.signIn(
-                                _emailController.text.trim(), 
-                                _passwordController.text.trim(),
-                              );
-
-                              if (success && context.mounted) {
-                                debugPrint("Вход успешный! Переходим на главный экран.");
-                              }
-                                                        } catch (e) {
-                              debugPrint("Ошибка при входе в Supabase: $e");
-                              if (context.mounted) {
-                                // 1. Переводим техническую ошибку в строковый ключ
-                                String mapServerExceptionToKey(String serverError) {
-                                  if (serverError.contains('invalid_credentials')) {
-                                    return 'error_invalid_credentials';
-                                  }
-                                  if (serverError.contains('SocketException') || serverError.contains('network_error')) {
-                                    return 'error_network';
-                                  }
-                                  return 'error_unknown';
-                                }
-
-                                String errorKey = mapServerExceptionToKey(e.toString());
-                                
-                                // 2. Используем ваш встроенный метод getTxt для перевода ключа ошибки!
-                                // Теперь не нужно вызывать методы из AppStrings напрямую здесь.
-                                String humanMessage = getTxt(errorKey, 'Ошибка входа. Проверьте данные.');
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(humanMessage), 
-                                    backgroundColor: const Color(0xFFFFB785),
-                                  ),
+                  // КАТТАЛУУ БАРАКЧАСЫНА ӨТҮҮ
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        getTxt('txt_dont_have_account', 'Аккаунтуңуз жокпу? '),
+                        style: const TextStyle(color: Color(0xFF94A3B8)),
+                      ),
+                      GestureDetector(
+                        onTap: isGeneralLoading
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const SignUpView()),
                                 );
-                              }
-                            }
+                              },
+                        child: Text(
+                          getTxt('btn_register', 'Катталуу'),
+                          style: const TextStyle(
+                            color: Color(0xFF4ADE80),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                                      } else {
-                                        debugPrint("Валидация не прошла!");}},
-                                        child: Container(
-                                          decoration: BoxDecoration(color: authProvider.isLoading? const Color(0xFF1E252B): const Color(0xFF4ADE80),
-                                          borderRadius: BorderRadius.circular(16),),
-                                          alignment: Alignment.center,
-                                          child: authProvider.isLoading? const SizedBox(height: 24,
-                                          width: 24,
-                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),): 
-                                          Text(getTxt('btn_login', 'Войти'),
-                                          style: TextStyle(color: authProvider.isLoading? Colors.grey: const Color(0xFF12161A),
-                                          fontSize: 16,fontWeight: FontWeight.bold,),),),),),),
-                                          const SizedBox(height: 32),
-                                          // КАТТАЛУУГА ӨТҮҮ ШИЛТЕМЕСИ
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [Text(getTxt('txt_no_account', 'Аккаунтуңуз жокпу? '),
-                                            style: const TextStyle(color: Color(0xFF94A3B8), 
-                                            fontSize: 14),),GestureDetector(
-                                              onTap: () {Navigator.push(context,MaterialPageRoute(builder: (context) => const SignUpView()),);},
-                                              child: Text(getTxt('link_register', 'Катталуу'),
-                                              style: const TextStyle(color: Color(0xFF4ADE80),
-                                              fontSize: 14,fontWeight: FontWeight.bold,),),),],),],),),),),),);}}  
+

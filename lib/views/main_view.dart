@@ -75,11 +75,23 @@ class _MainViewState extends State<MainView> {
               activeIcon: const Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.calendar_today, size: 20)),
               label: langProvider.translate('nav_calendar'),
             ),
-            BottomNavigationBarItem(
-              icon: const Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.analytics_outlined, size: 22)),
-              activeIcon: const Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.analytics, size: 22)),
-              label: langProvider.translate('nav_analytics'),
-            ),
+           BottomNavigationBarItem(
+  // 1. ИКОНКАЛАР ПРОФИЛГЕ АЛМАШТЫРЫЛДЫ:
+  icon: const Padding(
+    padding: EdgeInsets.only(bottom: 4), 
+    child: Icon(Icons.person_outline, size: 22),
+  ),
+  activeIcon: const Padding(
+    padding: EdgeInsets.only(bottom: 4), 
+    child: Icon(Icons.person, size: 22),
+  ),
+  
+  // 2. КАТА ОҢДОЛДУ (Котормо табылбаса, демейки "Профиль" сөзү чыгат):
+  label: langProvider.translate('nav_profile').isEmpty || langProvider.translate('nav_profile') == 'nav_profile'
+      ? 'Профиль' 
+      : langProvider.translate('nav_profile'),
+),
+
           ],
         ),
       ),

@@ -11,17 +11,19 @@ import 'core/services/supabase_provider.dart';
 import 'core/state/auth_bloc.dart'; 
 import 'core/state/ledger_manager_bloc.dart';
 import 'core/state/currency_bloc.dart'; 
-import 'views/auth_gate.dart';     
+import 'views/auth_gate.dart';  
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Supabase ишке киргизүү
+
+  // 2. Supabase'ди иштетүү (бул жерге өзүңүздүн эски Supabase URL жана Анонимдүү ачкычыңызды жазыңыз)
   await Supabase.initialize(
     url: 'https://iswtuketohftclhmncyi.supabase.co',
     // ignore: deprecated_member_use
-    anonKey: 'sb_publishable_CqCzKytkrPQyKlWlhhe-gA_RIIi1XGG', 
+    anonKey: 'sb_publishable_CqCzKytkrPQyKlWlhhe-gA_RIIi1XGG',
   );
+
 
   // Hive базасын ишке киргизүү
   await Hive.initFlutter();
