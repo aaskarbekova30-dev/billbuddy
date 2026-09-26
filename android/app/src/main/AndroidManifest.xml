@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ТӨМӨНКҮ ЭКИ СТРОКА ИНТЕРНЕТКЕ УРУКСАТ БЕРЕТ (Сөзсүз керек!) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:label="billbuddy"
         android:name="${applicationName}"
@@ -19,6 +24,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="io.supabase.billbuddy"
+                    android:host="login-callback" />
             </intent-filter>
         </activity>
         <meta-data

@@ -69,6 +69,7 @@ class LedgerManagerBloc extends Bloc<LedgerManagerEvent, LedgerManagerState> {
         }
 
         await _supabase.from('groups').insert({
+          'user_id': currentUser.id,
           'name': event.name,
           'category': event.category,
           'limit_amount': event.limitAmount,

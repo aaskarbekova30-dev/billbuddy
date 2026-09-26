@@ -4,6 +4,7 @@ import '../../config/app_strings.dart';
 
 class LanguageProvider extends ChangeNotifier {
   String _currentLang = 'ru'; // Демейки тил
+  late final Future<void> _initialization;
   
   // ОҢДОЛДУ: Баштапкы учурда словарь бош болбой, дароо орус тилиндеги сөздөрдү алат!
   // Бул СНГ аудиториясы үчүн тиркеме жаңы ачылганда ачкычтар (keys) көрүнүп калуусунан сактайт.
@@ -12,8 +13,10 @@ class LanguageProvider extends ChangeNotifier {
   String get currentLang => _currentLang;
 
   LanguageProvider() {
-    _initLanguage(); 
+    _initialization = _initLanguage();
   }
+
+  Future<void> get ready => _initialization;
 
   Future<void> _initLanguage() async {
     try {
@@ -28,6 +31,8 @@ class LanguageProvider extends ChangeNotifier {
   }
 
   Future<void> changeLanguage(String newLangCode) async {
+    await _initialization;
+
     if (_currentLang == newLangCode) return;
 
     _currentLang = newLangCode;

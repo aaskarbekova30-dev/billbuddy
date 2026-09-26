@@ -29,20 +29,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           password: event.password,
         );
         
-        if (response.user != null) {
-          // МАСЕЛЕНИ ЧЕЧҮҮ: Катталгандан кийин Supabase сессияны ачпай койгондуктан, 
-          // биз автоматтык түрдө дал ушул жерден Кирүү (Sign In) функциясын чакырабыз.
-          final loginResponse = await _supabase.auth.signInWithPassword(
-            email: event.email,
-            password: event.password,
-          );
-
-          if (loginResponse.session != null) {
-            emit(Authenticated(userId: loginResponse.user!.id));
-          } else {
-            // Эгер кирүүдө ката кетсе, бирок катталган болсо, баары бир киргизебиз
-            emit(Authenticated(userId: response.user!.id));
-          }
+        if (response.user != null && response.session != null) {
+          emit(Authenticated(userId: response.user!.id));
+        } else if (response.user != null) {
+          emit(EmailConfirmationRequired());
         } else {
           emit(AuthError(message: 'Каттоо убагында ката кетти'));
         }

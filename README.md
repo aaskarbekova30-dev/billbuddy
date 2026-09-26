@@ -1,17 +1,16 @@
-# billbuddy
+# BillBuddy
 
-A new Flutter project.
+Flutter expense tracker backed by Supabase.
 
-## Getting Started
+## Fresh Supabase setup
 
-This project is a starting point for a Flutter application.
+1. Create a new Supabase project.
+2. Open `SQL Editor` and run [`supabase/schema.sql`](supabase/schema.sql).
+3. In `Authentication > Providers`, enable Email. Google Provider is not required by the app.
+4. In `Authentication > URL Configuration`, add `io.supabase.billbuddy://login-callback/`.
+5. In Google Cloud OAuth settings, add `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback` as an authorized redirect URI.
+6. Replace the Supabase URL and publishable key in [`lib/main.dart`](lib/main.dart).
 
-A few resources to get you started if this is your first Flutter project:
+The schema creates `profiles`, `groups`, `expenses`, and `subscriptions`, enables row-level security, creates a profile for every new auth user, and enables the account-deletion RPC.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The schema is intended for a fresh database. Do not run it against an existing production database without a backup and migration plan.

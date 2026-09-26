@@ -118,7 +118,13 @@ class _NewRecurringViewState extends State<NewRecurringView> {
                     final String formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}";
 
                     try {
+                      final user = Supabase.instance.client.auth.currentUser;
+                      if (user == null) {
+                        throw Exception('Колдонуучу катталган эмес');
+                      }
+
                       await Supabase.instance.client.from('subscriptions').insert({
+                        'user_id': user.id,
                         'name': title,
                         'amount': amount,
                         'date': formattedDate,

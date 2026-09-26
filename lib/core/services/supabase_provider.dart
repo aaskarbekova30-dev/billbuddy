@@ -19,13 +19,7 @@ class SupabaseProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get userName => _userName;
 
-  SupabaseProvider() {
-    // Провайдер жаратылганда сервердеги маалыматтарды дароо угуп баштайт
-    listenToGroups();
-    listenToExpenses();
-    // Провайдер ишке киргенде колдонуучунун атын да кошо жүктөп алат
-    fetchProfile();
-  }
+  SupabaseProvider();
 
   void listenToGroups() {
     _supabase
@@ -115,11 +109,14 @@ class SupabaseProvider with ChangeNotifier {
   }) async {
     try {
       final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('Колдонуучу катталган эмес');
+      }
+
       await _supabase.from('groups').insert({
         'name': name,
-        'type': type,
-        'image_path': imagePath,
-        if (user != null) 'user_id': user.id,
+        'category': type,
+        'user_id': user.id,
       });
     } catch (e) {
       debugPrint('Supabase кошууда ката: $e');
@@ -135,14 +132,30 @@ class SupabaseProvider with ChangeNotifier {
   }) async {
     try {
       final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('Колдонуучу катталган эмес');
+      }
+
+      final group = await _supabase
+          .from('groups')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('name', groupName)
+          .maybeSingle();
+
+      final groupId = group?['id'];
+      if (groupId == null) {
+        throw Exception('Капчык табылган жок: $groupName');
+      }
+
       final expenseDate = date ?? DateTime.now();
 
       await _supabase.from('expenses').insert({
-        'title': title,
+        'description': title,
         'amount': amount,
-        'group_name': groupName,
+        'group_id': groupId,
+        'payer_id': user.id,
         'created_at': expenseDate.toIso8601String(),
-        if (user != null) 'user_id': user.id,
       });
 
       notifyListeners();
@@ -188,40 +201,6 @@ class SupabaseProvider with ChangeNotifier {
     }
   }
 
-  // Google менен кирүү функциясы (КАТАСЫЗ ВЕРСИЯ)
-  Future<bool> signInWithGoogle({required String idToken, required String accessToken}) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
-      );
-
-      final user = _supabase.auth.currentUser;
-      if (user != null) {
-        final username = user.userMetadata?['full_name'] ?? user.userMetadata?['name'] ?? 'Колдонуучу';
-        
-        await _supabase.from('profiles').upsert({
-          'id': user.id,
-          'username': username,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-        _userName = username;
-      }
-
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      debugPrint('Supabase Google менен кирүүдө ката: $e');
-      rethrow;
-    }
-  }
-
   // Электрондук почта, пароль жана колдонуучунун аты менен катталуу (Регистрация)
   Future<bool> signUp(String email, String password, String username) async {
     _isLoading = true;
@@ -260,7 +239,7 @@ class SupabaseProvider with ChangeNotifier {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'io.supabase.billbuddy://login-callback', 
+        redirectTo: 'io.supabase.billbuddy://login-callback/',
       );
     } catch (e) {
       debugPrint('Supabase сырсөздү калыбына келтирүүдө ката: $e');

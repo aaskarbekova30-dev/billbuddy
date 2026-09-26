@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../core/services/language_provider.dart';
 import '../core/state/ledger_manager_bloc.dart';
@@ -54,6 +55,16 @@ class _TimelineViewState extends State<TimelineView> {
     }
   }
 
+  String _getCurrentMonthName(String languageCode) {
+    final locale = switch (languageCode) {
+      'ru' => 'ru_RU',
+      'en' => 'en_US',
+      _ => 'ky_KG',
+    };
+    final monthName = DateFormat.MMMM(locale).format(_now);
+    return monthName[0].toUpperCase() + monthName.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Слушаем провайдер языка. При его изменении build вызовется автоматически
@@ -61,7 +72,7 @@ class _TimelineViewState extends State<TimelineView> {
 
     final String calendarTitle = langProvider.translate('calendar_title').isEmpty ? 'Хроника платежей' : langProvider.translate('calendar_title');
     final String calendarSubtitle = langProvider.translate('calendar_subtitle').isEmpty ? 'График предстоящих событий' : langProvider.translate('calendar_subtitle');
-    final String monthAugust = langProvider.translate('august').isEmpty ? 'Август' : langProvider.translate('august');
+    final String currentMonth = _getCurrentMonthName(langProvider.currentLang);
     final String eventsToday = langProvider.translate('events_today_title').isEmpty ? 'События на сегодня' : langProvider.translate('events_today_title');
     final String noSubscriptions = langProvider.translate('no_subscriptions').isEmpty ? 'Подписок пока нет' : langProvider.translate('no_subscriptions');
 
@@ -101,7 +112,7 @@ class _TimelineViewState extends State<TimelineView> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
                     decoration: BoxDecoration(color: const Color(0xFF1E252B), borderRadius: BorderRadius.circular(10)), 
-                    child: Text(monthAugust, style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 13))
+                    child: Text(currentMonth, style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 13))
                   ),
                 ],
               ),

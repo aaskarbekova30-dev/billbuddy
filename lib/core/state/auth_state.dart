@@ -18,6 +18,8 @@ class Authenticated extends AuthState {
 // 4. Кирбей калган абал (Колдонуучу каттала элек же тиркемеден чыккан)
 class Unauthenticated extends AuthState {}
 
+class EmailConfirmationRequired extends AuthState {}
+
 // 5. Ката кеткендеги абал (Мисалы: пароль туура эмес же мындай email бар)
 class AuthError extends AuthState {
   final String message;

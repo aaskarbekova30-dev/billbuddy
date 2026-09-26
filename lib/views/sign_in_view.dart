@@ -1,6 +1,5 @@
 import 'package:billbuddy/views/sign_up_view.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart' as g_auth;
 import 'package:provider/provider.dart'; 
 import '../../core/services/language_provider.dart';
 import '../../core/services/supabase_provider.dart'; 
@@ -18,7 +17,6 @@ class _SignInViewState extends State<SignInView> {
   final _passwordController = TextEditingController();
   
   bool _isObscure = true;
-  bool _isGoogleLoading = false; 
 
   @override
   void dispose() {
@@ -26,56 +24,6 @@ class _SignInViewState extends State<SignInView> {
     _passwordController.dispose();
     super.dispose();
   }
-
-    // ТАЗА GOOGLE АВТОРИЗАЦИЯ ФУНКЦИЯСЫ (ТОЛУК ОҢДОЛГОН ВЕРСИЯСЫ 7.x)
-  Future<void> _handleGoogleSignIn() async {
-    try {
-      setState(() => _isGoogleLoading = true);
-
-      // 1. Пакеттин жаңы синглтон объектисин чакыруу
-      final googleSignIn = g_auth.GoogleSignIn.instance;
-      await googleSignIn.initialize();
-      
-      // 2. БУЛ САП СӨЗСҮЗ БОЛУШУ КЕРЕК (Сизде өчүп калган сап):
-      final googleUser = await googleSignIn.authenticate(); 
-
-
-      // 3. Идентификациялык токенди алуу (idToken)
-      final googleAuth = googleUser.authentication;
-      final idToken = googleAuth.idToken;
-
-      // 4. Жаңы 7.x версиясынын стандарты боюнча accessToken алуу:
-      final authorization = await googleUser.authorizationClient.authorizationForScopes(['email', 'profile']);
-      final accessToken = authorization?.accessToken;
-
-      if (idToken == null || accessToken == null) {
-        throw 'Google токендери табылган жок';
-      }
-
-      if (mounted) {
-        final authProvider = Provider.of<SupabaseProvider>(context, listen: false);
-        await authProvider.signInWithGoogle(
-          idToken: idToken,
-          accessToken: accessToken,
-        );
-      }
-
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Ката кетти: $error"),
-            backgroundColor: const Color(0xFFEF4444),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isGoogleLoading = false);
-      }
-    }
-  }
-
 
   // EMAIL МЕНЕН КИРҮҮ ФУНКЦИЯСЫ
   Future<void> _handleEmailSignIn() async {
@@ -111,7 +59,7 @@ class _SignInViewState extends State<SignInView> {
       return (translated.isEmpty || translated == key) ? defaultText : translated;
     }
 
-    final isGeneralLoading = authProvider.isLoading || _isGoogleLoading;
+    final isGeneralLoading = authProvider.isLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFF12161A), 
@@ -276,7 +224,7 @@ class _SignInViewState extends State<SignInView> {
                       ),
                       elevation: 0,
                     ),
-                    child: isGeneralLoading && !_isGoogleLoading
+                    child: isGeneralLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -286,45 +234,6 @@ class _SignInViewState extends State<SignInView> {
                             getTxt('btn_login', 'Кирүү'),
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ЖЕ БӨЛҮГҮ
-                  Row(
-                    children: [
-                      const Expanded(child: Divider(color: Color(0xFF1E252B), thickness: 1)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          getTxt('txt_or', 'же'),
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                        ),
-                      ),
-                      const Expanded(child: Divider(color: Color(0xFF1E252B), thickness: 1)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // GOOGLE МЕНЕН КИРҮҮ БАСКЫЧЫ
-                  ElevatedButton.icon(
-                    onPressed: isGeneralLoading ? null : _handleGoogleSignIn,
-                    icon: _isGoogleLoading 
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.g_mobiledata, size: 30),
-                    label: Text(getTxt('btn_google', 'Google менен кирүү')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E252B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -339,7 +248,9 @@ class _SignInViewState extends State<SignInView> {
                       GestureDetector(
                         onTap: isGeneralLoading
                             ? null
-                            : () {
+                          : () async {
+                            await context.read<LanguageProvider>().changeLanguage('ru');
+                            if (!context.mounted) return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (context) => const SignUpView()),

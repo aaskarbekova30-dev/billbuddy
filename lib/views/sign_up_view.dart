@@ -20,6 +20,16 @@ class _SignUpViewState extends State<SignUpView> {
   final _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<LanguageProvider>().changeLanguage('ru');
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _confirmPasswordController.dispose();
     _emailController.dispose();
@@ -32,18 +42,18 @@ class _SignUpViewState extends State<SignUpView> {
     final lowerMessage = originalMessage.toLowerCase();
     if (lang == 'ru') {
       if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Этот Email уже зарегистрирован!';
-      if (lowerMessage.contains('weak_password')) return 'Пароль слишком простой! Минимум 6 символов.';
+      if (lowerMessage.contains('weak_password') || lowerMessage.contains('password should be at least 6 characters')) return 'Пароль слишком простой! Минимум 6 символов.';
       if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Неверный формат Email.';
       if (lowerMessage.contains('network')) return 'Ошибка сети. Проверьте internet-соединение.';
     } 
     else if (lang == 'en') {
       if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'This Email is already registered!';
-      if (lowerMessage.contains('weak_password')) return 'Password is too weak! Minimum 6 characters.';
+      if (lowerMessage.contains('weak_password') || lowerMessage.contains('password should be at least 6 characters')) return 'Password is too weak! Minimum 6 characters.';
       if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Invalid Email format.';
       if (lowerMessage.contains('network')) return 'Network error. Please check your internet connection.';
     }
     if (lowerMessage.contains('user_already_exists') || lowerMessage.contains('already registered')) return 'Бул Email дарек катталган!';
-    if (lowerMessage.contains('weak_password')) return 'Пароль өтө жөнөкөй! Кеминде 6 символ болушу керек.';
+    if (lowerMessage.contains('weak_password') || lowerMessage.contains('password should be at least 6 characters')) return 'Пароль өтө жөнөкөй! Кеминде 6 символ болушу керек.';
     if (lowerMessage.contains('invalid_email') || lowerMessage.contains('invalid email')) return 'Email дарек туура эмес форматта.';
     if (lowerMessage.contains('network')) return 'Интернет байланышын текшерип, кайра аракет кылыңыз.';
     return originalMessage; 
@@ -69,6 +79,20 @@ class _SignUpViewState extends State<SignUpView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(langProvider.translate('hint_match')),
+          backgroundColor: const Color(0xFFFB7185),
+        ),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(langProvider.currentLang == 'ru'
+              ? 'Пароль должен содержать минимум 6 символов.'
+              : langProvider.currentLang == 'en'
+                  ? 'Password must contain at least 6 characters.'
+                  : 'Пароль кеминде 6 символдон турушу керек.'),
           backgroundColor: const Color(0xFFFB7185),
         ),
       );
@@ -120,6 +144,15 @@ class _SignUpViewState extends State<SignUpView> {
               context, 
               MaterialPageRoute(builder: (context) => const MainView()),
             );
+          }
+          if (state is EmailConfirmationRequired) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email дарегиңизди ырастап, андан кийин кириңиз.'),
+                backgroundColor: Color(0xFF4ADE80),
+              ),
+            );
+            Navigator.pop(context);
           }
           if (state is AuthError) {
             final localizedMsg = _parseSystemError(state.message, currentLang);
